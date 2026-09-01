@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DocScanVisual from "../components/landing/DocScanVisual";
 import FlowBackground from "../components/landing/FlowBackground";
@@ -9,17 +9,17 @@ import { ROLE_LIST } from "../config/roles";
 
 // Stands in for the backend: a real login endpoint returns the account's role
 // in its response. Until that's wired up, this maps a handful of demo
-// usernames to a role so every console stays reachable without one.
-function resolveRole(username) {
-  const norm = username.trim().toLowerCase();
-  const match = ROLE_LIST.find((r) => norm === r.userName.toLowerCase().replace(". ", "."));
+// emails to a role so every console stays reachable without one.
+function resolveRole(email) {
+  const norm = email.trim().toLowerCase();
+  const match = ROLE_LIST.find((r) => norm === r.email.toLowerCase());
   return match ?? ROLE_LIST[0];
 }
 
 export default function SignIn() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -27,7 +27,7 @@ export default function SignIn() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const role = resolveRole(username);
+    const role = resolveRole(email);
     setTimeout(() => navigate(role.basePath), 450);
   };
 
@@ -60,15 +60,16 @@ export default function SignIn() {
 
           <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-[11.5px] font-medium text-ink-dim">Username</span>
+              <span className="text-[11.5px] font-medium text-ink-dim">Email</span>
               <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-3 focus-within:border-brand">
-                <User size={15} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+                <Mail size={15} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
                 <input
                   required
                   autoFocus
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. r.sharma"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. r.sharma@ssb.gov.in"
                   className="w-full bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
                 />
               </div>
@@ -121,9 +122,10 @@ export default function SignIn() {
           </form>
 
           <p className="mt-6 text-[11.5px] leading-relaxed text-ink-faint">
-            Demo build — no backend is connected yet. Try <span className="font-mono">r.sharma</span> (Verifier),{" "}
-            <span className="font-mono">a.mehta</span> (Admin), or <span className="font-mono">d.kulkarni</span>{" "}
-            (Super Admin) as the username, with any password, to preview each console.
+            Demo build — no backend is connected yet. Try <span className="font-mono">r.sharma@ssb.gov.in</span> (Verifier),{" "}
+            <span className="font-mono">a.mehta@ssb.gov.in</span> (Admin), or{" "}
+            <span className="font-mono">d.kulkarni@ssb.gov.in</span> (Super Admin), with any password, to preview each
+            console.
           </p>
         </motion.div>
 

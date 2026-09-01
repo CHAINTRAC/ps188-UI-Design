@@ -78,7 +78,7 @@ export default function VerifierDashboard() {
     <>
       <Topbar title="Screen Document" subtitle="Checkpoint CP-04 · Terminal 2" liveLabel="Shift 06:42:11" />
 
-      <div className="grid grid-cols-[1.35fr_1fr] items-start gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.35fr_1fr]">
         {/* LEFT */}
         <div className="flex flex-col gap-5">
           <Card delay={0.02}>

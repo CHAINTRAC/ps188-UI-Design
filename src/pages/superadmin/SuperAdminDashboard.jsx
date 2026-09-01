@@ -17,60 +17,68 @@ export default function SuperAdminDashboard() {
     <>
       <Topbar title="Organization Overview" subtitle="All regions · Ministry of Home Affairs / SSB" />
 
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {orgStats.map((s, i) => (
           <StatCard key={s.label} delay={0.02 * i} {...s} />
         ))}
       </div>
 
-      <div className="grid grid-cols-[1.3fr_1fr] items-start gap-5">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
         <Card delay={0.08}>
           <span className="mb-3.5 block text-[13.5px] font-semibold">Checkpoints</span>
-          <div className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
-            <span>ID</span>
-            <span>REGION</span>
-            <span>ADMIN</span>
-            <span>ONLINE</span>
-            <span>TODAY</span>
-          </div>
-          {checkpoints.map((c, i) => (
-            <div
-              key={c.id}
-              className={`grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
-                i !== checkpoints.length - 1 ? "border-b border-line-soft" : ""
-              }`}
-            >
-              <span className="font-mono text-[12px] font-medium">{c.id}</span>
-              <span className="text-[12px] text-ink-dim">{c.region}</span>
-              <span className="text-[12px]">{c.admin}</span>
-              <span className={`flex items-center gap-1.5 text-[11px] ${c.status === "good" ? "text-good-ink" : "text-warn-ink"}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${c.status === "good" ? "bg-good" : "bg-warn"}`} />
-                {c.online}
-              </span>
-              <span className="font-mono text-[12px]">{c.today}</span>
+          <div className="overflow-x-auto">
+            <div className="min-w-[460px]">
+              <div className="grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
+                <span>ID</span>
+                <span>REGION</span>
+                <span>ADMIN</span>
+                <span>ONLINE</span>
+                <span>TODAY</span>
+              </div>
+              {checkpoints.map((c, i) => (
+                <div
+                  key={c.id}
+                  className={`grid grid-cols-[0.7fr_1fr_1fr_0.8fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
+                    i !== checkpoints.length - 1 ? "border-b border-line-soft" : ""
+                  }`}
+                >
+                  <span className="font-mono text-[12px] font-medium">{c.id}</span>
+                  <span className="text-[12px] text-ink-dim">{c.region}</span>
+                  <span className="text-[12px]">{c.admin}</span>
+                  <span className={`flex items-center gap-1.5 text-[11px] ${c.status === "good" ? "text-good-ink" : "text-warn-ink"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${c.status === "good" ? "bg-good" : "bg-warn"}`} />
+                    {c.online}
+                  </span>
+                  <span className="font-mono text-[12px]">{c.today}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
 
           <span className="mb-3.5 mt-6 block border-t border-line pt-5 text-[13.5px] font-semibold">Admins</span>
-          <div className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
-            <span>NAME</span>
-            <span>REGION</span>
-            <span>TEAM</span>
-            <span>ACCURACY</span>
-          </div>
-          {admins.map((a, i) => (
-            <div
-              key={a.name}
-              className={`grid grid-cols-[1.2fr_1fr_0.8fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
-                i !== admins.length - 1 ? "border-b border-line-soft" : ""
-              }`}
-            >
-              <span className="text-[12.5px] font-medium">{a.name}</span>
-              <span className="text-[12px] text-ink-dim">{a.region}</span>
-              <span className="font-mono text-[12px]">{a.team}</span>
-              <span className="font-mono text-[12px] text-good-ink">{a.accuracy.toFixed(1)}%</span>
+          <div className="overflow-x-auto">
+            <div className="min-w-[400px]">
+              <div className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
+                <span>NAME</span>
+                <span>REGION</span>
+                <span>TEAM</span>
+                <span>ACCURACY</span>
+              </div>
+              {admins.map((a, i) => (
+                <div
+                  key={a.name}
+                  className={`grid grid-cols-[1.2fr_1fr_0.8fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
+                    i !== admins.length - 1 ? "border-b border-line-soft" : ""
+                  }`}
+                >
+                  <span className="text-[12.5px] font-medium">{a.name}</span>
+                  <span className="text-[12px] text-ink-dim">{a.region}</span>
+                  <span className="font-mono text-[12px]">{a.team}</span>
+                  <span className="font-mono text-[12px] text-good-ink">{a.accuracy.toFixed(1)}%</span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </Card>
 
         <Card delay={0.1}>

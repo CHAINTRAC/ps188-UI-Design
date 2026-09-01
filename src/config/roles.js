@@ -18,6 +18,7 @@ export const ROLES = {
     userName: "R. Sharma",
     userInitials: "RS",
     userMeta: "Verifier · CP-04",
+    email: "r.sharma@ssb.gov.in",
     basePath: "/verifier",
     nav: [
       { label: "Screen Document", icon: ScanLine, path: "/verifier" },
@@ -31,6 +32,7 @@ export const ROLES = {
     userName: "A. Mehta",
     userInitials: "AM",
     userMeta: "Admin · North Zone",
+    email: "a.mehta@ssb.gov.in",
     basePath: "/admin",
     nav: [
       { label: "Team Overview", icon: LayoutGrid, path: "/admin" },
@@ -46,6 +48,7 @@ export const ROLES = {
     userName: "D. Kulkarni",
     userInitials: "DK",
     userMeta: "Super Admin",
+    email: "d.kulkarni@ssb.gov.in",
     basePath: "/super-admin",
     nav: [
       { label: "Org Overview", icon: LayoutGrid, path: "/super-admin" },

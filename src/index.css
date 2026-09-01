@@ -134,6 +134,11 @@
 }
 
 @layer utilities {
+  .bg-dot-grid {
+    background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
   @keyframes scan-beam {
     0% { transform: translateY(-100%); opacity: 0; }
     10% { opacity: 1; }

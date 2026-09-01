@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { FileBarChart2, MapPinned, ScrollText, Settings2, Users } from "lucide-react";
+import { MapPinned, ScrollText, Settings2, Users } from "lucide-react";
 import HeaderShell from "./components/layout/HeaderShell";
 import EmptyState from "./components/ui/EmptyState";
 import Landing from "./pages/Landing";
@@ -8,6 +8,9 @@ import Profile from "./pages/Profile";
 import VerifierDashboard from "./pages/verifier/VerifierDashboard";
 import VerifierHistory from "./pages/verifier/VerifierHistory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import Verifiers from "./pages/admin/Verifiers";
+import Reports from "./pages/admin/Reports";
+import AuditLog from "./pages/admin/AuditLog";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import { ROLES } from "./config/roles";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -40,18 +43,9 @@ export default function App() {
 
           <Route element={<HeaderShell role={ROLES.admin} />}>
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route
-              path="/admin/verifiers"
-              element={<Placeholder role={ROLES.admin} title="Verifiers" Icon={Users} />}
-            />
-            <Route
-              path="/admin/reports"
-              element={<Placeholder role={ROLES.admin} title="Reports" Icon={FileBarChart2} />}
-            />
-            <Route
-              path="/admin/audit-log"
-              element={<Placeholder role={ROLES.admin} title="Audit Log" Icon={ScrollText} />}
-            />
+            <Route path="/admin/verifiers" element={<Verifiers />} />
+            <Route path="/admin/reports" element={<Reports />} />
+            <Route path="/admin/audit-log" element={<AuditLog />} />
             <Route path="/admin/profile" element={<Profile role={ROLES.admin} />} />
           </Route>
 

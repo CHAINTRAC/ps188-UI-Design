@@ -28,13 +28,13 @@ export default function AdminDashboard() {
     <>
       <Topbar title="Team Overview" subtitle="North Zone · 6 checkpoints · 14 verifiers" />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {adminStats.map((s, i) => (
           <StatCard key={s.label} delay={0.02 * i} {...s} />
         ))}
       </div>
 
-      <div className="grid grid-cols-[1.5fr_1fr] items-start gap-5">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="flex flex-col gap-5">
           <Card delay={0.08}>
             <div className="mb-4 flex items-center justify-between">
@@ -72,30 +72,34 @@ export default function AdminDashboard() {
 
           <Card delay={0.12}>
             <span className="mb-3.5 block text-[13.5px] font-semibold">Verifiers</span>
-            <div className="grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
-              <span>NAME</span>
-              <span>CHECKPOINT</span>
-              <span>STATUS</span>
-              <span>TODAY</span>
-              <span>ACCURACY</span>
-            </div>
-            {verifiers.map((v, i) => (
-              <div
-                key={v.name}
-                className={`grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
-                  i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
-                }`}
-              >
-                <span className="text-[12.5px] font-medium">{v.name}</span>
-                <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint}</span>
-                <span className={`flex items-center gap-1.5 text-[11px] ${v.online ? "text-good-ink" : "text-ink-faint"}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${v.online ? "bg-good" : "bg-line"}`} />
-                  {v.online ? "Online" : "Offline"}
-                </span>
-                <span className="font-mono text-[12px]">{v.today}</span>
-                <span className="font-mono text-[12px]">{v.accuracy.toFixed(1)}%</span>
+            <div className="overflow-x-auto">
+              <div className="min-w-[480px]">
+                <div className="grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
+                  <span>NAME</span>
+                  <span>CHECKPOINT</span>
+                  <span>STATUS</span>
+                  <span>TODAY</span>
+                  <span>ACCURACY</span>
+                </div>
+                {verifiers.map((v, i) => (
+                  <div
+                    key={v.name}
+                    className={`grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
+                      i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
+                    }`}
+                  >
+                    <span className="text-[12.5px] font-medium">{v.name}</span>
+                    <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint}</span>
+                    <span className={`flex items-center gap-1.5 text-[11px] ${v.online ? "text-good-ink" : "text-ink-faint"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${v.online ? "bg-good" : "bg-line"}`} />
+                      {v.online ? "Online" : "Offline"}
+                    </span>
+                    <span className="font-mono text-[12px]">{v.today}</span>
+                    <span className="font-mono text-[12px]">{v.accuracy.toFixed(1)}%</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </Card>
         </div>
 
