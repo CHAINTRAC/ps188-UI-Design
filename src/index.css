@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* neutral surfaces — warm-cool paper tone */
+  --color-canvas: oklch(98% 0.005 95);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-sunken: oklch(96.5% 0.006 95);
+  --color-ink: oklch(13.5% 0.012 260);
+  --color-ink-dim: oklch(40% 0.018 260);
+  --color-ink-faint: oklch(58% 0.014 260);
+  --color-line: oklch(88% 0.008 260);
+  --color-line-soft: oklch(93.5% 0.005 260);
+
+  /* command chrome — deep navy */
+  --color-navy: oklch(20.5% 0.032 262);
+  --color-navy-raised: oklch(25% 0.036 262);
+  --color-navy-line: oklch(31% 0.03 262);
+  --color-navy-ink: oklch(78% 0.02 250);
+  --color-navy-ink-dim: oklch(52% 0.025 255);
+
+  /* brand — punchier, more saturated for real contrast on light surfaces */
+  --color-brand: oklch(56% 0.135 195);
+  --color-brand-dim: oklch(47% 0.12 195);
+  --color-brand-soft: oklch(93% 0.035 195);
+  --color-brand-ink: oklch(33% 0.09 195);
+
+  /* semantic risk scale — shared L/C, hue-differentiated */
+  --color-good: oklch(52% 0.17 150);
+  --color-good-soft: oklch(93.5% 0.045 150);
+  --color-good-ink: oklch(33% 0.11 150);
+
+  --color-warn: oklch(66% 0.18 68);
+  --color-warn-soft: oklch(94% 0.06 75);
+  --color-warn-ink: oklch(38% 0.13 55);
+
+  --color-bad: oklch(53% 0.22 25);
+  --color-bad-soft: oklch(94% 0.055 25);
+  --color-bad-ink: oklch(42% 0.18 25);
+
+  --shadow-card: 0 1px 2px oklch(20% 0.02 260 / 0.04), 0 8px 24px -12px oklch(20% 0.02 260 / 0.10);
+  --shadow-card-hover: 0 2px 4px oklch(20% 0.02 260 / 0.06), 0 16px 36px -14px oklch(20% 0.02 260 / 0.16);
+  --shadow-panel: 0 1px 0 oklch(100% 0 0 / 0.04) inset, 0 20px 50px -20px oklch(15% 0.03 260 / 0.45);
+
+  --blob-opacity-1: 0.08;
+  --blob-opacity-2: 0.055;
+  --blob-opacity-3: 0.045;
+  --flow-line-opacity: 0.14;
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --color-canvas: oklch(14.5% 0.016 260);
+  --color-surface: oklch(18.5% 0.017 260);
+  --color-surface-sunken: oklch(23% 0.02 260);
+  --color-ink: oklch(93% 0.006 260);
+  --color-ink-dim: oklch(72% 0.012 260);
+  --color-ink-faint: oklch(52% 0.014 260);
+  --color-line: oklch(28% 0.02 260);
+  --color-line-soft: oklch(24% 0.018 260);
+
+  --color-navy: oklch(11.5% 0.02 262);
+  --color-navy-raised: oklch(17% 0.026 262);
+  --color-navy-line: oklch(24% 0.026 262);
+
+  --color-brand: oklch(70% 0.11 195);
+  --color-brand-dim: oklch(60% 0.1 195);
+  --color-brand-soft: oklch(27% 0.05 195);
+  --color-brand-ink: oklch(83% 0.07 195);
+
+  --color-good: oklch(70% 0.16 150);
+  --color-good-soft: oklch(27% 0.06 150);
+  --color-good-ink: oklch(83% 0.09 150);
+
+  --color-warn: oklch(76% 0.15 75);
+  --color-warn-soft: oklch(29% 0.06 75);
+  --color-warn-ink: oklch(85% 0.08 70);
+
+  --color-bad: oklch(68% 0.19 25);
+  --color-bad-soft: oklch(29% 0.07 25);
+  --color-bad-ink: oklch(85% 0.09 25);
+
+  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 8px 24px -12px oklch(0% 0 0 / 0.5);
+  --shadow-card-hover: 0 2px 4px oklch(0% 0 0 / 0.35), 0 20px 44px -16px oklch(0% 0 0 / 0.6);
+  --shadow-panel: 0 1px 0 oklch(100% 0 0 / 0.06) inset, 0 24px 60px -20px oklch(0% 0 0 / 0.7);
+
+  --blob-opacity-1: 0.22;
+  --blob-opacity-2: 0.16;
+  --blob-opacity-3: 0.14;
+  --flow-line-opacity: 0.3;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+  html {
+    color-scheme: light;
+  }
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+  a {
+    color: var(--color-brand-dim);
+  }
+  a:hover {
+    color: var(--color-brand);
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-ink);
+  }
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-faint);
+  }
+}
+
+@layer utilities {
+  @keyframes scan-beam {
+    0% { transform: translateY(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(2200%); opacity: 0; }
+  }
+  .scan-beam { animation: scan-beam 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+  @keyframes field-flash {
+    0%, 100% { border-color: var(--color-line); box-shadow: none; background: var(--color-surface); }
+    5% { border-color: var(--color-brand); box-shadow: 0 0 0 3px var(--color-brand-soft); }
+    16%, 90% { border-color: var(--color-good); box-shadow: 0 0 0 3px var(--color-good-soft); }
+  }
+  .field-flash { animation: field-flash 4.8s ease-in-out infinite; }
+
+  @keyframes aurora-drift-a {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(8%, 10%) scale(1.15); }
+  }
+  @keyframes aurora-drift-b {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-9%, -6%) scale(1.18); }
+  }
+  @keyframes aurora-drift-c {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-6%, 9%) scale(1.12); }
+  }
+  .aurora-drift-a { animation: aurora-drift-a 22s ease-in-out infinite; }
+  .aurora-drift-b { animation: aurora-drift-b 26s ease-in-out infinite; }
+  .aurora-drift-c { animation: aurora-drift-c 30s ease-in-out infinite; }
+
+  .noise-veil {
+    position: relative;
+  }
+  .noise-veil::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+}
