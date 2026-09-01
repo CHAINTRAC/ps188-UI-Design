@@ -1,7 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { MapPinned, ScrollText, Settings2, Users } from "lucide-react";
 import HeaderShell from "./components/layout/HeaderShell";
-import EmptyState from "./components/ui/EmptyState";
 import Landing from "./pages/Landing";
 import SignIn from "./pages/SignIn";
 import Profile from "./pages/Profile";
@@ -12,20 +10,12 @@ import Verifiers from "./pages/admin/Verifiers";
 import Reports from "./pages/admin/Reports";
 import AuditLog from "./pages/admin/AuditLog";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
+import Admins from "./pages/superadmin/Admins";
+import Checkpoints from "./pages/superadmin/Checkpoints";
+import AuditTrail from "./pages/superadmin/AuditTrail";
+import Settings from "./pages/superadmin/Settings";
 import { ROLES } from "./config/roles";
 import { ThemeProvider } from "./context/ThemeContext";
-
-function Placeholder({ role, title, Icon }) {
-  return (
-    <EmptyState
-      role={role}
-      title={title}
-      subtitle={role.tagline}
-      description="This section is scoped for a future build pass — not part of the current design sprint."
-      Icon={Icon}
-    />
-  );
-}
 
 export default function App() {
   return (
@@ -51,22 +41,10 @@ export default function App() {
 
           <Route element={<HeaderShell role={ROLES.superadmin} />}>
             <Route path="/super-admin" element={<SuperAdminDashboard />} />
-            <Route
-              path="/super-admin/admins"
-              element={<Placeholder role={ROLES.superadmin} title="Admins" Icon={Users} />}
-            />
-            <Route
-              path="/super-admin/checkpoints"
-              element={<Placeholder role={ROLES.superadmin} title="Checkpoints" Icon={MapPinned} />}
-            />
-            <Route
-              path="/super-admin/audit-trail"
-              element={<Placeholder role={ROLES.superadmin} title="Audit Trail" Icon={ScrollText} />}
-            />
-            <Route
-              path="/super-admin/settings"
-              element={<Placeholder role={ROLES.superadmin} title="Settings" Icon={Settings2} />}
-            />
+            <Route path="/super-admin/admins" element={<Admins />} />
+            <Route path="/super-admin/checkpoints" element={<Checkpoints />} />
+            <Route path="/super-admin/audit-trail" element={<AuditTrail />} />
+            <Route path="/super-admin/settings" element={<Settings />} />
             <Route path="/super-admin/profile" element={<Profile role={ROLES.superadmin} />} />
           </Route>
         </Routes>
