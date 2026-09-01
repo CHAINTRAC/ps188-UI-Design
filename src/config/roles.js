@@ -1,7 +1,6 @@
 import {
   ScanLine,
   History,
-  UserCircle2,
   LayoutGrid,
   Users,
   FileBarChart2,
@@ -23,7 +22,6 @@ export const ROLES = {
     nav: [
       { label: "Screen Document", icon: ScanLine, path: "/verifier" },
       { label: "My History", icon: History, path: "/verifier/history" },
-      { label: "Profile", icon: UserCircle2, path: "/verifier/profile" },
     ],
   },
   admin: {

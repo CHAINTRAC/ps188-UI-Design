@@ -3,7 +3,6 @@ import { Check, LogIn, Settings2, TriangleAlert, UserPlus } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
-import { ROLES } from "../../config/roles";
 import { admins, auditTrail, checkpoints, orgStats } from "../../data/mockData";
 
 const ACTION_ICON = {
@@ -14,11 +13,9 @@ const ACTION_ICON = {
 };
 
 export default function SuperAdminDashboard() {
-  const role = ROLES.superadmin;
-
   return (
     <>
-      <Topbar title="Organization Overview" subtitle="All regions · Ministry of Home Affairs / SSB" role={role} />
+      <Topbar title="Organization Overview" subtitle="All regions · Ministry of Home Affairs / SSB" />
 
       <div className="grid grid-cols-5 gap-4">
         {orgStats.map((s, i) => (

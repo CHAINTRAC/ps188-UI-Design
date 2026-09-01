@@ -1,10 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { FileBarChart2, History, MapPinned, ScrollText, Settings2, UserCircle2, Users } from "lucide-react";
-import AppShell from "./components/layout/AppShell";
+import { FileBarChart2, MapPinned, ScrollText, Settings2, Users } from "lucide-react";
+import HeaderShell from "./components/layout/HeaderShell";
 import EmptyState from "./components/ui/EmptyState";
 import Landing from "./pages/Landing";
 import SignIn from "./pages/SignIn";
+import Profile from "./pages/Profile";
 import VerifierDashboard from "./pages/verifier/VerifierDashboard";
+import VerifierHistory from "./pages/verifier/VerifierHistory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import { ROLES } from "./config/roles";
@@ -30,19 +32,13 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<SignIn />} />
 
-          <Route element={<AppShell role={ROLES.verifier} />}>
+          <Route element={<HeaderShell role={ROLES.verifier} />}>
             <Route path="/verifier" element={<VerifierDashboard />} />
-            <Route
-              path="/verifier/history"
-              element={<Placeholder role={ROLES.verifier} title="My History" Icon={History} />}
-            />
-            <Route
-              path="/verifier/profile"
-              element={<Placeholder role={ROLES.verifier} title="Profile" Icon={UserCircle2} />}
-            />
+            <Route path="/verifier/history" element={<VerifierHistory />} />
+            <Route path="/verifier/profile" element={<Profile role={ROLES.verifier} />} />
           </Route>
 
-          <Route element={<AppShell role={ROLES.admin} />}>
+          <Route element={<HeaderShell role={ROLES.admin} />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route
               path="/admin/verifiers"
@@ -56,9 +52,10 @@ export default function App() {
               path="/admin/audit-log"
               element={<Placeholder role={ROLES.admin} title="Audit Log" Icon={ScrollText} />}
             />
+            <Route path="/admin/profile" element={<Profile role={ROLES.admin} />} />
           </Route>
 
-          <Route element={<AppShell role={ROLES.superadmin} />}>
+          <Route element={<HeaderShell role={ROLES.superadmin} />}>
             <Route path="/super-admin" element={<SuperAdminDashboard />} />
             <Route
               path="/super-admin/admins"
@@ -76,6 +73,7 @@ export default function App() {
               path="/super-admin/settings"
               element={<Placeholder role={ROLES.superadmin} title="Settings" Icon={Settings2} />}
             />
+            <Route path="/super-admin/profile" element={<Profile role={ROLES.superadmin} />} />
           </Route>
         </Routes>
       </BrowserRouter>

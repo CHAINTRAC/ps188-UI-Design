@@ -3,7 +3,7 @@ import Topbar from "../layout/Topbar";
 export default function EmptyState({ role, title, subtitle, description, Icon }) {
   return (
     <>
-      <Topbar title={title} subtitle={subtitle} role={role} />
+      <Topbar title={title} subtitle={subtitle} />
       <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-line py-24 text-center">
         {Icon && (
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-sunken text-ink-faint">

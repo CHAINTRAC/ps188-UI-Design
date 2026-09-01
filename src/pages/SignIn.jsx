@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DocScanVisual from "../components/landing/DocScanVisual";
 import FlowBackground from "../components/landing/FlowBackground";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import { ROLE_LIST } from "../config/roles";
 
+// Stands in for the backend: a real login endpoint returns the account's role
+// in its response. Until that's wired up, this maps a handful of demo
+// usernames to a role so every console stays reachable without one.
+function resolveRole(username) {
+  const norm = username.trim().toLowerCase();
+  const match = ROLE_LIST.find((r) => norm === r.userName.toLowerCase().replace(". ", "."));
+  return match ?? ROLE_LIST[0];
+}
+
 export default function SignIn() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const role = ROLE_LIST.find((r) => r.key === params.get("role")) ?? ROLE_LIST[0];
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +27,7 @@ export default function SignIn() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const role = resolveRole(username);
     setTimeout(() => navigate(role.basePath), 450);
   };
 
@@ -46,11 +54,9 @@ export default function SignIn() {
           className="mx-auto w-full max-w-[420px] lg:mx-0"
         >
           <h1 className="font-display text-[36px] font-bold leading-tight text-ink">Sign in</h1>
-          <div className="mt-2.5 flex items-center gap-2 text-[13.5px] text-ink-dim">
-            <span>Continuing to the</span>
-            <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11.5px] font-semibold text-brand-ink">{role.label}</span>
-            <span>console</span>
-          </div>
+          <p className="mt-2.5 text-[13.5px] text-ink-dim">
+            One console for every role — what you see after signing in depends on your account.
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
@@ -62,7 +68,7 @@ export default function SignIn() {
                   autoFocus
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={`e.g. ${role.userName.toLowerCase().replace(". ", ".")}`}
+                  placeholder="e.g. r.sharma"
                   className="w-full bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
                 />
               </div>
@@ -115,7 +121,9 @@ export default function SignIn() {
           </form>
 
           <p className="mt-6 text-[11.5px] leading-relaxed text-ink-faint">
-            Demo build — no backend is connected yet. Any credentials will sign you into the {role.label.toLowerCase()} console.
+            Demo build — no backend is connected yet. Try <span className="font-mono">r.sharma</span> (Verifier),{" "}
+            <span className="font-mono">a.mehta</span> (Admin), or <span className="font-mono">d.kulkarni</span>{" "}
+            (Super Admin) as the username, with any password, to preview each console.
           </p>
         </motion.div>
 

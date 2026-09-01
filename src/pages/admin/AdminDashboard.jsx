@@ -5,7 +5,6 @@ import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import StatCard from "../../components/ui/StatCard";
-import { ROLES } from "../../config/roles";
 import { adminStats, flaggedCases, verifiers, weeklyVolume } from "../../data/mockData";
 import { BAD, GOOD, WARN } from "../../lib/chartColors";
 
@@ -25,11 +24,9 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function AdminDashboard() {
-  const role = ROLES.admin;
-
   return (
     <>
-      <Topbar title="Team Overview" subtitle="North Zone · 6 checkpoints · 14 verifiers" role={role} />
+      <Topbar title="Team Overview" subtitle="North Zone · 6 checkpoints · 14 verifiers" />
 
       <div className="grid grid-cols-4 gap-4">
         {adminStats.map((s, i) => (
