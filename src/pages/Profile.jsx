@@ -1,15 +1,31 @@
 import { motion } from "framer-motion";
 import { Calendar, KeyRound, LogOut, MapPin, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Topbar from "../components/layout/Topbar";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
+import { useMe, useLogout } from "../features/auth/hooks";
+import { initialsFor } from "../lib/format";
 
 const ROLE_TONE = { verifier: "brand", admin: "warn", superadmin: "good" };
 
 export default function Profile({ role }) {
+  const navigate = useNavigate();
+  const { data: user } = useMe();
+  const logout = useLogout();
   const tone = ROLE_TONE[role.key] ?? "brand";
   const location = role.tagline;
+
+  const userName = user?.full_name ?? role.userName;
+  const userInitials = user ? initialsFor(user.full_name) : role.userInitials;
+  const memberSince = user
+    ? new Date(user.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <>
@@ -18,9 +34,9 @@ export default function Profile({ role }) {
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
         <Card delay={0.02} className="flex flex-col items-center text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-navy text-[22px] font-semibold text-white">
-            {role.userInitials}
+            {userInitials}
           </div>
-          <div className="mt-4 text-[16px] font-semibold text-ink">{role.userName}</div>
+          <div className="mt-4 text-[16px] font-semibold text-ink">{userName}</div>
           <Badge variant={tone} className="mt-2">
             {role.label.toUpperCase()}
           </Badge>
@@ -31,13 +47,13 @@ export default function Profile({ role }) {
               <KeyRound size={14} strokeWidth={1.75} />
               Change Password
             </button>
-            <Link
-              to="/"
+            <button
+              onClick={handleLogout}
               className="flex items-center justify-center gap-2 rounded-lg border border-line bg-surface py-2.5 text-[12.5px] font-medium text-bad-ink transition-colors hover:bg-bad-soft"
             >
               <LogOut size={14} strokeWidth={1.75} />
               Sign Out
-            </Link>
+            </button>
           </div>
         </Card>
 
@@ -53,7 +69,7 @@ export default function Profile({ role }) {
               {[
                 { icon: ShieldCheck, label: "Role", value: role.label },
                 { icon: MapPin, label: "Assignment", value: location },
-                { icon: Calendar, label: "Member since", value: "14 Feb 2024" },
+                { icon: Calendar, label: "Member since", value: memberSince },
               ].map((row, i, arr) => (
                 <div
                   key={row.label}

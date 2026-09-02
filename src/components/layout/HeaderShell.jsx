@@ -1,12 +1,25 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, Menu, ShieldCheck, X } from "lucide-react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../ui/ThemeToggle";
+import { useMe, useLogout } from "../../features/auth/hooks";
+import { initialsFor } from "../../lib/format";
 
 export default function HeaderShell({ role }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: user } = useMe();
+  const logout = useLogout();
+
+  const userName = user?.full_name ?? role.userName;
+  const userInitials = user ? initialsFor(user.full_name) : role.userInitials;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     setMobileOpen(false);
@@ -64,7 +77,7 @@ export default function HeaderShell({ role }) {
           <div className="flex items-center gap-2 justify-self-end sm:gap-3">
             <ThemeToggle />
             <div className="hidden flex-col items-end lg:flex">
-              <span className="text-[12.5px] font-medium leading-tight text-ink">{role.userName}</span>
+              <span className="text-[12.5px] font-medium leading-tight text-ink">{userName}</span>
               <span className="text-[10.5px] leading-tight text-ink-faint">{role.userMeta}</span>
             </div>
             <Link
@@ -72,15 +85,15 @@ export default function HeaderShell({ role }) {
               aria-label="View profile"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-semibold text-white ring-2 ring-transparent transition-all hover:ring-brand/40"
             >
-              {role.userInitials}
+              {userInitials}
             </Link>
-            <Link
-              to="/"
+            <button
+              onClick={handleLogout}
               aria-label="Sign out"
               className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-ink-faint transition-colors hover:bg-surface-sunken hover:text-ink-dim sm:flex"
             >
               <LogOut size={15} strokeWidth={1.75} />
-            </Link>
+            </button>
             <button
               onClick={() => setMobileOpen((o) => !o)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -120,20 +133,20 @@ export default function HeaderShell({ role }) {
                 <div className="my-1.5 border-t border-line-soft" />
                 <div className="flex items-center gap-3 px-3.5 py-2">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-[10.5px] font-semibold text-white">
-                    {role.userInitials}
+                    {userInitials}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[12.5px] font-medium leading-tight text-ink">{role.userName}</span>
+                    <span className="text-[12.5px] font-medium leading-tight text-ink">{userName}</span>
                     <span className="text-[10.5px] leading-tight text-ink-faint">{role.userMeta}</span>
                   </div>
                 </div>
-                <Link
-                  to="/"
-                  className="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-[14px] font-medium text-bad-ink hover:bg-bad-soft"
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-medium text-bad-ink hover:bg-bad-soft"
                 >
                   <LogOut size={17} strokeWidth={1.75} />
                   Sign Out
-                </Link>
+                </button>
               </nav>
             </motion.div>
           )}

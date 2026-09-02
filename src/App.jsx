@@ -16,38 +16,75 @@ import AuditTrail from "./pages/superadmin/AuditTrail";
 import Settings from "./pages/superadmin/Settings";
 import { ROLES } from "./config/roles";
 import { ThemeProvider } from "./context/ThemeContext";
+import AuthBoot from "./components/auth/AuthBoot";
+import RequireRole from "./components/auth/RequireRole";
+import RedirectIfAuthenticated from "./components/auth/RedirectIfAuthenticated";
 
 export default function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<SignIn />} />
+        <AuthBoot>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <RedirectIfAuthenticated>
+                  <Landing />
+                </RedirectIfAuthenticated>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <RedirectIfAuthenticated>
+                  <SignIn />
+                </RedirectIfAuthenticated>
+              }
+            />
 
-          <Route element={<HeaderShell role={ROLES.verifier} />}>
-            <Route path="/verifier" element={<VerifierDashboard />} />
-            <Route path="/verifier/history" element={<VerifierHistory />} />
-            <Route path="/verifier/profile" element={<Profile role={ROLES.verifier} />} />
-          </Route>
+            <Route
+              element={
+                <RequireRole roles={["verifier"]}>
+                  <HeaderShell role={ROLES.verifier} />
+                </RequireRole>
+              }
+            >
+              <Route path="/verifier" element={<VerifierDashboard />} />
+              <Route path="/verifier/history" element={<VerifierHistory />} />
+              <Route path="/verifier/profile" element={<Profile role={ROLES.verifier} />} />
+            </Route>
 
-          <Route element={<HeaderShell role={ROLES.admin} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/verifiers" element={<Verifiers />} />
-            <Route path="/admin/reports" element={<Reports />} />
-            <Route path="/admin/audit-log" element={<AuditLog />} />
-            <Route path="/admin/profile" element={<Profile role={ROLES.admin} />} />
-          </Route>
+            <Route
+              element={
+                <RequireRole roles={["admin"]}>
+                  <HeaderShell role={ROLES.admin} />
+                </RequireRole>
+              }
+            >
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/verifiers" element={<Verifiers />} />
+              <Route path="/admin/reports" element={<Reports />} />
+              <Route path="/admin/audit-log" element={<AuditLog />} />
+              <Route path="/admin/profile" element={<Profile role={ROLES.admin} />} />
+            </Route>
 
-          <Route element={<HeaderShell role={ROLES.superadmin} />}>
-            <Route path="/super-admin" element={<SuperAdminDashboard />} />
-            <Route path="/super-admin/admins" element={<Admins />} />
-            <Route path="/super-admin/checkpoints" element={<Checkpoints />} />
-            <Route path="/super-admin/audit-trail" element={<AuditTrail />} />
-            <Route path="/super-admin/settings" element={<Settings />} />
-            <Route path="/super-admin/profile" element={<Profile role={ROLES.superadmin} />} />
-          </Route>
-        </Routes>
+            <Route
+              element={
+                <RequireRole roles={["superadmin"]}>
+                  <HeaderShell role={ROLES.superadmin} />
+                </RequireRole>
+              }
+            >
+              <Route path="/super-admin" element={<SuperAdminDashboard />} />
+              <Route path="/super-admin/admins" element={<Admins />} />
+              <Route path="/super-admin/checkpoints" element={<Checkpoints />} />
+              <Route path="/super-admin/audit-trail" element={<AuditTrail />} />
+              <Route path="/super-admin/settings" element={<Settings />} />
+              <Route path="/super-admin/profile" element={<Profile role={ROLES.superadmin} />} />
+            </Route>
+          </Routes>
+        </AuthBoot>
       </BrowserRouter>
     </ThemeProvider>
   );

@@ -62,3 +62,7 @@ export const ROLES = {
 
 export const ROLE_LIST = Object.values(ROLES);
 export { Building2 };
+
+export function dashboardPathFor(role) {
+  return ROLES[role]?.basePath ?? "/login";
+}

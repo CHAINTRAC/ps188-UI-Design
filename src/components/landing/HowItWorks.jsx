@@ -100,8 +100,7 @@ export default function HowItWorks() {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
 
-  // scroll-jack: while the section is substantially in view, wheel steps through
-  // modules one at a time; releases to normal page scroll at either edge.
+  // scroll-jack: wheel steps through modules while the section is in view, then releases
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;

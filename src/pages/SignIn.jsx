@@ -1,35 +1,33 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck, TriangleAlert, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DocScanVisual from "../components/landing/DocScanVisual";
 import FlowBackground from "../components/landing/FlowBackground";
 import ThemeToggle from "../components/ui/ThemeToggle";
-import { ROLE_LIST } from "../config/roles";
-
-// Stands in for the backend: a real login endpoint returns the account's role
-// in its response. Until that's wired up, this maps a handful of demo
-// emails to a role so every console stays reachable without one.
-function resolveRole(email) {
-  const norm = email.trim().toLowerCase();
-  const match = ROLE_LIST.find((r) => norm === r.email.toLowerCase());
-  return match ?? ROLE_LIST[0];
-}
+import { dashboardPathFor } from "../config/roles";
+import { useLogin } from "../features/auth/hooks";
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const login = useLogin();
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitting(true);
-    const role = resolveRole(email);
-    setTimeout(() => navigate(role.basePath), 450);
+    login.mutate(
+      { username, password },
+      {
+        onSuccess: (data) => navigate(dashboardPathFor(data.user.role), { replace: true }),
+      }
+    );
   };
+
+  const errorMessage =
+    login.isError && (login.error.response?.data?.error?.message || "Something went wrong. Try again.");
 
   return (
     <div className="relative min-h-screen">
@@ -58,18 +56,26 @@ export default function SignIn() {
             One console for every role — what you see after signing in depends on your account.
           </p>
 
+          {errorMessage && (
+            <div className="mt-6 flex items-center gap-2.5 rounded-lg border border-bad/30 bg-bad-soft px-3.5 py-3">
+              <TriangleAlert size={15} strokeWidth={1.75} className="shrink-0 text-bad-ink" />
+              <span className="text-[12.5px] font-medium text-bad-ink">{errorMessage}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-[11.5px] font-medium text-ink-dim">Email</span>
+              <span className="text-[11.5px] font-medium text-ink-dim">Username</span>
               <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-3 focus-within:border-brand">
-                <Mail size={15} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+                <User size={15} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
                 <input
                   required
                   autoFocus
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. r.sharma@ssb.gov.in"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. r.sharma"
+                  autoComplete="username"
                   className="w-full bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
                 />
               </div>
@@ -90,6 +96,7 @@ export default function SignIn() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
                 />
                 <button
@@ -107,10 +114,10 @@ export default function SignIn() {
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={submitting}
+              disabled={login.isPending}
               className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-navy py-3.5 text-[13.5px] font-semibold text-white shadow-sm transition-shadow hover:shadow-[0_0_24px_-4px_var(--color-brand)] disabled:opacity-70"
             >
-              {submitting ? (
+              {login.isPending ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
@@ -120,13 +127,6 @@ export default function SignIn() {
               )}
             </motion.button>
           </form>
-
-          <p className="mt-6 text-[11.5px] leading-relaxed text-ink-faint">
-            Demo build — no backend is connected yet. Try <span className="font-mono">r.sharma@ssb.gov.in</span> (Verifier),{" "}
-            <span className="font-mono">a.mehta@ssb.gov.in</span> (Admin), or{" "}
-            <span className="font-mono">d.kulkarni@ssb.gov.in</span> (Super Admin), with any password, to preview each
-            console.
-          </p>
         </motion.div>
 
         {/* right: illustrative depth stack, same page background as the form side */}
