@@ -1,60 +1,112 @@
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, FileCheck2, RotateCcw, ScanFace, ScanLine, ScanSearch, TriangleAlert, Upload, User, X } from "lucide-react";
+import {
+  Camera,
+  Check,
+  FileCheck2,
+  RotateCcw,
+  ScanFace,
+  ScanLine,
+  ScanSearch,
+  ShieldAlert,
+  ShieldCheck,
+  TriangleAlert,
+  Upload,
+  User,
+  X,
+} from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import RiskGauge from "../../components/ui/RiskGauge";
+import CameraCaptureModal from "../../components/verifier/CameraCaptureModal";
 import { SCENARIOS, STAGES } from "../../data/verifierScenarios";
 
-const STAGE_ICONS = { ocr: ScanLine, checksum: FileCheck2, tamper: ScanSearch, face: ScanFace };
+const STAGE_ICONS = { ocr: ScanLine, checksum: FileCheck2, tamper: ScanSearch, face: ScanFace, blacklist: ShieldAlert };
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
 const confBadge = (c) => (c >= 90 ? "good" : c >= 75 ? "warn" : "bad");
+const STATUS_BADGE = { pass: "good", warn: "warn", fail: "bad" };
+const STATUS_ICON = { pass: Check, warn: TriangleAlert, fail: X };
 
 const QUICK_TESTS = [
   { key: "genuine", label: "Genuine Passport", tone: "good" },
   { key: "suspicious", label: "Suspicious — Field Tamper", tone: "warn" },
   { key: "fake", label: "Fake — Forged Document", tone: "bad" },
+  { key: "blacklisted", label: "Blacklisted — Reported Stolen", tone: "bad" },
 ];
+
+function EvidenceRow({ icon: Icon, title, status, children }) {
+  const StatusIcon = STATUS_ICON[status];
+  return (
+    <div className="py-3.5">
+      <div className="mb-2 flex items-center gap-2.5">
+        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${status === "pass" ? "bg-good-soft" : status === "warn" ? "bg-warn-soft" : "bg-bad-soft"}`}>
+          <Icon size={13} strokeWidth={1.75} className={status === "pass" ? "text-good-ink" : status === "warn" ? "text-warn-ink" : "text-bad-ink"} />
+        </div>
+        <span className="flex-1 text-[12.5px] font-medium text-ink">{title}</span>
+        <Badge variant={STATUS_BADGE[status]} className="gap-1">
+          <StatusIcon size={11} strokeWidth={2.5} />
+          {status === "pass" ? "Pass" : status === "warn" ? "Review" : "Fail"}
+        </Badge>
+      </div>
+      <div className="pl-9.5 flex flex-col gap-1">{children}</div>
+    </div>
+  );
+}
 
 export default function VerifierDashboard() {
   const fileInputRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [scenarioKey, setScenarioKey] = useState(null);
+  const [isQuickTest, setIsQuickTest] = useState(false);
   const [status, setStatus] = useState("idle"); // idle | ready | processing | done
   const [stageIndex, setStageIndex] = useState(-1);
   const [decision, setDecision] = useState(null);
   const [remark, setRemark] = useState("");
+  const [liveCaptureUrl, setLiveCaptureUrl] = useState(null);
+  const [showLiveCapture, setShowLiveCapture] = useState(false);
+  const [showDocCapture, setShowDocCapture] = useState(false);
 
   const scenario = scenarioKey ? SCENARIOS[scenarioKey] : null;
+  const canScreen = isQuickTest || !!liveCaptureUrl;
 
   const reset = () => {
     setPreviewUrl(null);
     setScenarioKey(null);
+    setIsQuickTest(false);
     setStatus("idle");
     setStageIndex(-1);
     setDecision(null);
     setRemark("");
+    setLiveCaptureUrl(null);
   };
 
   const pickScenario = (key) => {
     setPreviewUrl(null);
     setScenarioKey(key);
+    setIsQuickTest(true);
     setStatus("ready");
     setStageIndex(-1);
     setDecision(null);
+    setLiveCaptureUrl(null);
+  };
+
+  const beginDocument = (url) => {
+    setPreviewUrl(url);
+    const keys = Object.keys(SCENARIOS);
+    setScenarioKey(keys[Math.floor(Math.random() * keys.length)]);
+    setIsQuickTest(false);
+    setStatus("ready");
+    setStageIndex(-1);
+    setDecision(null);
+    setLiveCaptureUrl(null);
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPreviewUrl(URL.createObjectURL(file));
-    const keys = Object.keys(SCENARIOS);
-    setScenarioKey(keys[Math.floor(Math.random() * keys.length)]);
-    setStatus("ready");
-    setStageIndex(-1);
-    setDecision(null);
+    beginDocument(URL.createObjectURL(file));
   };
 
   const runScreening = () => {
@@ -69,9 +121,9 @@ export default function VerifierDashboard() {
         return;
       }
       setStageIndex(i);
-      setTimeout(step, 750);
+      setTimeout(step, 700);
     };
-    setTimeout(step, 750);
+    setTimeout(step, 700);
   };
 
   return (
@@ -84,20 +136,32 @@ export default function VerifierDashboard() {
           <Card delay={0.02}>
             <div className="mb-3.5 flex items-center justify-between">
               <span className="text-[13.5px] font-semibold">Document</span>
-              {scenario && <Badge variant="brand">PASSPORT</Badge>}
+              {scenario && <Badge variant="brand">{scenario.docType}</Badge>}
             </div>
 
             {status === "idle" && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line py-14 text-center transition-colors hover:border-brand hover:bg-surface-sunken/50"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-sunken">
-                  <Upload size={18} strokeWidth={1.75} className="text-ink-faint" />
-                </div>
-                <span className="text-[13px] font-medium text-ink">Click to upload a document</span>
-                <span className="text-[11.5px] text-ink-faint">JPG or PNG · passport, visa, Aadhaar, or permit</span>
-              </button>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line py-11 text-center transition-colors hover:border-brand hover:bg-surface-sunken/50"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-sunken">
+                    <Upload size={18} strokeWidth={1.75} className="text-ink-faint" />
+                  </div>
+                  <span className="text-[13px] font-medium text-ink">Upload a document</span>
+                  <span className="px-4 text-[11.5px] text-ink-faint">JPG or PNG · passport, visa, Aadhaar, or permit</span>
+                </button>
+                <button
+                  onClick={() => setShowDocCapture(true)}
+                  className="flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line py-11 text-center transition-colors hover:border-brand hover:bg-surface-sunken/50"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-sunken">
+                    <Camera size={18} strokeWidth={1.75} className="text-ink-faint" />
+                  </div>
+                  <span className="text-[13px] font-medium text-ink">Capture with camera</span>
+                  <span className="px-4 text-[11.5px] text-ink-faint">Scan directly at the checkpoint counter</span>
+                </button>
+              </div>
             )}
 
             {status !== "idle" && (
@@ -110,7 +174,7 @@ export default function VerifierDashboard() {
                       <User size={36} strokeWidth={1.4} className="text-[#a89f7f]" />
                     </div>
                     <div className="flex flex-1 flex-col justify-center gap-2">
-                      <span className="text-[9px] tracking-widest text-[#93896a]">REPUBLIC OF INDIA · PASSPORT</span>
+                      <span className="text-[9px] tracking-widest text-[#93896a]">REPUBLIC OF INDIA · {scenario?.docType}</span>
                       {[70, 50, 60, 40].map((w, i) => (
                         <span key={i} className="h-[9px] rounded-sm bg-[#d9d2b8]" style={{ width: `${w}%` }} />
                       ))}
@@ -125,12 +189,39 @@ export default function VerifierDashboard() {
 
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
+            {status === "ready" && !isQuickTest && (
+              <div className="mt-3.5 flex items-center justify-between gap-3 rounded-lg border border-line bg-surface-sunken/50 px-3.5 py-3">
+                <div className="flex items-center gap-2.5">
+                  {liveCaptureUrl ? (
+                    <img src={liveCaptureUrl} alt="Live capture" className="h-9 w-9 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-ink-faint">
+                      <Camera size={15} strokeWidth={1.75} />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-[12px] font-medium text-ink">{liveCaptureUrl ? "Live photo captured" : "Live capture required"}</div>
+                    <div className="text-[10.5px] text-ink-faint">Needed for 1:1 face verification</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowLiveCapture(true)}
+                  className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-[11.5px] font-medium text-ink-dim hover:bg-surface-sunken"
+                >
+                  {liveCaptureUrl ? "Retake" : "Capture"}
+                </button>
+              </div>
+            )}
+
             {status === "ready" && (
               <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={runScreening}
-                className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-lg bg-navy py-3 text-[13px] font-semibold text-white shadow-sm"
+                whileHover={canScreen ? { y: -1 } : {}}
+                whileTap={canScreen ? { scale: 0.98 } : {}}
+                onClick={canScreen ? runScreening : undefined}
+                disabled={!canScreen}
+                className={`mt-3.5 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-[13px] font-semibold shadow-sm transition-opacity ${
+                  canScreen ? "bg-navy text-white" : "cursor-not-allowed bg-navy/40 text-white/70"
+                }`}
               >
                 <ScanSearch size={15} strokeWidth={2} />
                 Run AI Screening
@@ -207,7 +298,7 @@ export default function VerifierDashboard() {
             <Card delay={0.1}>
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-[13.5px] font-semibold">Extracted Fields</span>
-                <span className="text-[11px] text-ink-faint">OCR · predict_pipeline</span>
+                <span className="text-[11px] text-ink-faint">OCR & Extraction Service</span>
               </div>
               <div className="flex flex-col">
                 {scenario.ocrFields.map((f, i) => (
@@ -262,22 +353,51 @@ export default function VerifierDashboard() {
                     <span className="text-[11.5px] leading-relaxed text-ink-dim">{scenario.summary}</span>
                   </div>
                 </div>
-                <div className="mt-4 flex flex-col gap-2.5 border-t border-line-soft pt-4">
-                  {scenario.evidence.map((e, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${evidenceDot[e.tone]}`} />
-                      <span className="text-[12px] leading-relaxed text-ink">{e.text}</span>
+              </Card>
+
+              <Card delay={0.08} noPad>
+                <span className="mb-1 block px-5 pt-5 text-[13.5px] font-semibold">Evidence Breakdown</span>
+                <p className="px-5 pb-1 text-[11px] text-ink-faint">Four independent signals — each from a separate service, combined into the score above.</p>
+                <div className="flex flex-col divide-y divide-line-soft px-5 pb-4">
+                  <EvidenceRow icon={FileCheck2} title="Validation Engine" status={scenario.validation.status}>
+                    {scenario.validation.checks.map((c, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-[11.5px] text-ink-dim">
+                        <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${evidenceDot[STATUS_BADGE[c.status] === "bad" ? "bad" : STATUS_BADGE[c.status] === "warn" ? "warn" : "good"]}`} />
+                        <span><b className="font-medium text-ink">{c.label}</b> — {c.detail}</span>
+                      </div>
+                    ))}
+                  </EvidenceRow>
+
+                  <EvidenceRow icon={ScanSearch} title="Tampering Model" status={scenario.tampering.status}>
+                    <div className="text-[11.5px] text-ink-dim">{scenario.tampering.detail}</div>
+                    <div className="mt-1 flex gap-4 font-mono text-[10.5px] text-ink-faint">
+                      <span>cnn_score {scenario.tampering.cnnScore}</span>
+                      <span>ela_variance {scenario.tampering.elaVariance} / {scenario.tampering.elaThreshold}</span>
                     </div>
-                  ))}
+                  </EvidenceRow>
+
+                  <EvidenceRow
+                    icon={scenario.blacklist.flagged ? ShieldAlert : ShieldCheck}
+                    title="Blacklist Check"
+                    status={scenario.blacklist.flagged ? "fail" : "pass"}
+                  >
+                    <div className="text-[11.5px] text-ink-dim">
+                      {scenario.blacklist.flagged ? scenario.blacklist.reason : "No match against the active blacklist registry"}
+                    </div>
+                  </EvidenceRow>
                 </div>
               </Card>
 
-              <Card delay={0.1}>
+              <Card delay={0.12}>
                 <span className="mb-3.5 block text-[13.5px] font-semibold">Face Verification</span>
                 <div className="flex items-center justify-center gap-4">
                   <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-line bg-surface-sunken">
-                      <User size={26} strokeWidth={1.5} className="text-ink-faint" />
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-line bg-surface-sunken">
+                      {previewUrl ? (
+                        <img src={previewUrl} alt="Document photo" className="h-full w-full object-cover" />
+                      ) : (
+                        <User size={26} strokeWidth={1.5} className="text-ink-faint" />
+                      )}
                     </div>
                     <span className="text-[10px] text-ink-faint">Document photo</span>
                   </div>
@@ -287,13 +407,17 @@ export default function VerifierDashboard() {
                         scenario.tone === "bad" ? "text-bad" : scenario.tone === "warn" ? "text-warn-ink" : "text-good-ink"
                       }`}
                     >
-                      {scenario.faceMatch}%
+                      {scenario.faceMatch.score}%
                     </span>
                     <span className="text-[9px] text-ink-faint">MATCH</span>
                   </div>
                   <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-line bg-surface-sunken">
-                      <User size={26} strokeWidth={1.5} className="text-ink-faint" />
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-line bg-surface-sunken">
+                      {liveCaptureUrl ? (
+                        <img src={liveCaptureUrl} alt="Live capture" className="h-full w-full object-cover" />
+                      ) : (
+                        <User size={26} strokeWidth={1.5} className="text-ink-faint" />
+                      )}
                     </div>
                     <span className="text-[10px] text-ink-faint">Live capture</span>
                   </div>
@@ -301,7 +425,7 @@ export default function VerifierDashboard() {
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${scenario.faceMatch}%` }}
+                    animate={{ width: `${scenario.faceMatch.score}%` }}
                     transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
                     className={`h-full rounded-full ${
                       scenario.tone === "bad" ? "bg-bad" : scenario.tone === "warn" ? "bg-warn" : "bg-good"
@@ -309,7 +433,9 @@ export default function VerifierDashboard() {
                   />
                 </div>
                 <div className="mt-2 text-center text-[11px] text-ink-faint">
-                  {scenario.faceMatch >= 85 ? "Above 85% confidence threshold" : "Below 85% confidence threshold"}
+                  {scenario.faceMatch.match
+                    ? `Above ${scenario.faceMatch.threshold}% confidence threshold`
+                    : `Below ${scenario.faceMatch.threshold}% confidence threshold`}
                 </div>
               </Card>
 
@@ -373,6 +499,37 @@ export default function VerifierDashboard() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showDocCapture && (
+          <CameraCaptureModal
+            title="Document Capture"
+            subtitle="Fit the document fully in frame, flat and well-lit."
+            facingMode="environment"
+            aspect="aspect-[3/2]"
+            mirror={false}
+            onClose={() => setShowDocCapture(false)}
+            onCapture={(dataUrl) => {
+              beginDocument(dataUrl);
+              setShowDocCapture(false);
+            }}
+          />
+        )}
+        {showLiveCapture && (
+          <CameraCaptureModal
+            title="Live Capture"
+            subtitle="For 1:1 face verification against the document photo."
+            facingMode="user"
+            aspect="aspect-[4/3]"
+            mirror
+            onClose={() => setShowLiveCapture(false)}
+            onCapture={(dataUrl) => {
+              setLiveCaptureUrl(dataUrl);
+              setShowLiveCapture(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

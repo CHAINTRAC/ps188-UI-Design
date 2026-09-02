@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, FileCheck2, ScanFace, ScanLine, ScanSearch } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, FileCheck2, ScanFace, ScanLine, ScanSearch, ShieldAlert } from "lucide-react";
 
 const MODULES = [
   {
@@ -62,6 +62,21 @@ const MODULES = [
     codeSnippet: "Face similarity: 96.2% (threshold 85%) → MATCH",
     stats: { speed: "~65ms", accuracy: "96% match", layer: "Layer 4" },
     icon: ScanFace,
+  },
+  {
+    id: "blacklist",
+    title: "Blacklist Check",
+    tag: "REGISTRY LOOKUP",
+    badgeColor: "#8b5cf6",
+    cardBg: "linear-gradient(145deg, #3b2166 0%, #1c0f38 100%)",
+    bgGlow: "rgba(139, 92, 246, 0.4)",
+    ambientBg:
+      "radial-gradient(ellipse at 70% 50%, rgba(139, 92, 246, 0.22) 0%, rgba(91, 51, 168, 0.12) 45%, transparent 75%)",
+    description:
+      "Cross-checks the document number against Sentinel's own registry — reported stolen, previously flagged, or under active watch.",
+    codeSnippet: "doc_number Z1234567 → NOT_FOUND (clean)",
+    stats: { speed: "~8ms", accuracy: "own registry", layer: "Layer 5" },
+    icon: ShieldAlert,
   },
 ];
 
