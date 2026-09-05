@@ -3,9 +3,18 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
-import { weeklyVolume } from "../../data/mockData";
-import { docTypeBreakdown, verifiersFull } from "../../data/adminData";
+import { useMe } from "../../features/auth/hooks";
+import { useUsers } from "../../features/users/hooks";
+import { useScreenings } from "../../features/screenings/hooks";
 import { BAD, BRAND, GOOD, WARN } from "../../lib/chartColors";
+
+const DOC_LABEL = {
+  passport: "Passport",
+  visa: "Visa",
+  national_id: "National ID",
+  driving_license: "Driving License",
+  permit: "Permit",
+};
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -22,34 +31,82 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-const totals = weeklyVolume.reduce(
-  (acc, d) => ({ genuine: acc.genuine + d.genuine, suspicious: acc.suspicious + d.suspicious, fake: acc.fake + d.fake }),
-  { genuine: 0, suspicious: 0, fake: 0 }
-);
-const totalScreenings = totals.genuine + totals.suspicious + totals.fake;
-const fakeRate = ((totals.fake / totalScreenings) * 100).toFixed(1);
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return d.toDateString() === now.toDateString();
+}
 
-const checkpointBreakdown = Object.values(
-  verifiersFull.reduce((acc, v) => {
-    acc[v.checkpoint] ??= { checkpoint: v.checkpoint, verifiers: 0, today: 0 };
-    acc[v.checkpoint].verifiers += 1;
-    acc[v.checkpoint].today += v.today;
-    return acc;
-  }, {})
-).sort((a, b) => b.today - a.today);
+function buildWeeklyVolume(screenings) {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({ key: d.toDateString(), day: d.toLocaleDateString("en-US", { weekday: "short" }), genuine: 0, suspicious: 0, fake: 0 });
+  }
+  const byKey = Object.fromEntries(days.map((d) => [d.key, d]));
+  for (const s of screenings) {
+    const bucket = byKey[new Date(s.created_at).toDateString()];
+    if (!bucket) continue;
+    if (s.verdict_band === "GENUINE") bucket.genuine += 1;
+    else if (s.verdict_band === "FAKE") bucket.fake += 1;
+    else bucket.suspicious += 1;
+  }
+  return days;
+}
 
-const maxDocCount = Math.max(...docTypeBreakdown.map((d) => d.count));
+function avgDecisionSeconds(screenings) {
+  const decided = screenings.filter((s) => s.officer_decision);
+  if (decided.length === 0) return 0;
+  const total = decided.reduce((sum, s) => sum + (new Date(s.officer_decision.decided_at) - new Date(s.created_at)), 0);
+  return Math.round(total / decided.length / 1000);
+}
 
 export default function Reports() {
+  const { data: me } = useMe();
+  const { data: users = [] } = useUsers();
+  const { data: screenings = [] } = useScreenings();
+
+  const verifiers = users.filter((u) => u.role === "verifier" && (!me?.region || u.region === me.region));
+
+  const totalScreenings = screenings.length;
+  const fakeCount = screenings.filter((s) => s.verdict_band === "FAKE").length;
+  const fakeRate = totalScreenings ? ((fakeCount / totalScreenings) * 100).toFixed(1) : "0.0";
+  const escalatedCount = screenings.filter((s) => s.officer_decision?.decision === "escalate").length;
+
+  const weeklyVolume = buildWeeklyVolume(screenings);
+
+  const docCounts = screenings.reduce((acc, s) => {
+    acc[s.doc_type] = (acc[s.doc_type] || 0) + 1;
+    return acc;
+  }, {});
+  const docTypeBreakdown = Object.entries(docCounts)
+    .map(([doc, count]) => ({ doc: DOC_LABEL[doc] || doc, count }))
+    .sort((a, b) => b.count - a.count);
+  const maxDocCount = Math.max(1, ...docTypeBreakdown.map((d) => d.count));
+
+  const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
+  const checkpointBreakdown = Object.values(
+    verifiers.reduce((acc, v) => {
+      if (!v.checkpoint_id) return acc;
+      acc[v.checkpoint_id] ??= { checkpoint: v.checkpoint_id, verifiers: 0 };
+      acc[v.checkpoint_id].verifiers += 1;
+      return acc;
+    }, {})
+  )
+    .map((c) => ({ ...c, today: todaysScreenings.filter((s) => s.checkpoint_id === c.checkpoint).length }))
+    .sort((a, b) => b.today - a.today);
+
   return (
     <>
-      <Topbar title="Reports" subtitle="North Zone · trends & breakdowns" />
+      <Topbar title="Reports" subtitle={`${me?.region || "—"} · trends & breakdowns`} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Screenings This Week" value={totalScreenings} delay={0} />
         <StatCard label="Fake Detection Rate" value={fakeRate} decimals={1} suffix="%" tone="bad" accent delay={0.03} />
-        <StatCard label="Avg Decision Time" value={38} suffix="s" trend="down" trendLabel="4.5s" delay={0.06} />
-        <StatCard label="Escalated Cases" value={12} tone="warn" accent delay={0.09} />
+        <StatCard label="Avg Decision Time" value={avgDecisionSeconds(screenings)} suffix="s" delay={0.06} />
+        <StatCard label="Escalated Cases" value={escalatedCount} tone="warn" accent delay={0.09} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
@@ -107,6 +164,7 @@ export default function Reports() {
                 </div>
               </motion.div>
             ))}
+            {docTypeBreakdown.length === 0 && <div className="text-[12px] text-ink-faint">No screenings yet.</div>}
           </div>
         </Card>
       </div>
@@ -132,6 +190,7 @@ export default function Reports() {
                 <span className="font-mono text-[12px]">{c.today}</span>
               </div>
             ))}
+            {checkpointBreakdown.length === 0 && <div className="py-4 text-[12px] text-ink-faint">No checkpoints in this region yet.</div>}
           </div>
         </div>
       </Card>

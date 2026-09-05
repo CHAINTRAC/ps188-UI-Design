@@ -1,24 +1,21 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, MapPinned, Plus, User, UserPlus, X } from "lucide-react";
+import { KeyRound, Mail, MapPinned, Plus, User, UserPlus, X } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
-import { adminsFull, checkpointsFull } from "../../data/superAdminData";
+import { useUsers, useCreateUser, useResetUserPassword } from "../../features/users/hooks";
+import { useCheckpoints } from "../../features/checkpoints/hooks";
+import { initialsFor } from "../../lib/format";
 
-const KNOWN_REGIONS = ["North Zone", "East Zone", "West Zone", "South Zone"];
-
-function initialsFor(name) {
-  return name
-    .split(" ")
-    .map((p) => p.replace(".", "")[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+function formatDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function AdminDetail({ admin, onClose }) {
-  const managed = checkpointsFull.filter((c) => c.admin === admin.name);
+function AdminDetail({ admin, team, checkpoints, onClose }) {
+  const managed = checkpoints.filter((c) => c.admin_id === admin.id);
+  const resetPassword = useResetUserPassword();
 
   return (
     <motion.div
@@ -39,10 +36,10 @@ function AdminDetail({ admin, onClose }) {
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-[13px] font-semibold text-white">
-              {admin.initials}
+              {initialsFor(admin.full_name)}
             </div>
             <div>
-              <div className="text-[15px] font-semibold text-ink">{admin.name}</div>
+              <div className="text-[15px] font-semibold text-ink">{admin.full_name}</div>
               <div className="text-[11.5px] text-ink-faint">
                 {admin.region} · {admin.email}
               </div>
@@ -59,17 +56,42 @@ function AdminDetail({ admin, onClose }) {
         <div className="mb-6 grid grid-cols-3 gap-3 rounded-2xl border border-line bg-surface-sunken/50 p-4">
           <div>
             <div className="text-[9.5px] font-medium uppercase tracking-wider text-ink-faint">Team</div>
-            <div className="mt-0.5 font-mono text-[15px] font-bold text-ink">{admin.team}</div>
+            <div className="mt-0.5 font-mono text-[15px] font-bold text-ink">{team}</div>
           </div>
           <div>
-            <div className="text-[9.5px] font-medium uppercase tracking-wider text-ink-faint">Accuracy</div>
-            <div className="mt-0.5 font-mono text-[15px] font-bold text-ink">{admin.accuracy}%</div>
+            <div className="text-[9.5px] font-medium uppercase tracking-wider text-ink-faint">Checkpoints</div>
+            <div className="mt-0.5 font-mono text-[15px] font-bold text-ink">{managed.length}</div>
           </div>
           <div>
             <div className="text-[9.5px] font-medium uppercase tracking-wider text-ink-faint">Admin since</div>
-            <div className="mt-0.5 text-[13px] font-semibold text-ink">{admin.joined}</div>
+            <div className="mt-0.5 text-[13px] font-semibold text-ink">{formatDate(admin.created_at)}</div>
           </div>
         </div>
+
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-line px-3.5 py-3">
+          <div>
+            <div className="text-[12.5px] font-medium text-ink">Reset password</div>
+            <div className="text-[11px] text-ink-faint">Issues a new temporary password for this account.</div>
+          </div>
+          <button
+            onClick={() => resetPassword.mutate(admin.id)}
+            disabled={resetPassword.isPending}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[12px] font-medium text-ink-dim transition-colors hover:bg-surface-sunken disabled:opacity-60"
+          >
+            <KeyRound size={13} strokeWidth={1.75} />
+            {resetPassword.isPending ? "Resetting…" : "Reset"}
+          </button>
+        </div>
+        {resetPassword.isSuccess && (
+          <div className="mb-6 rounded-lg border border-good/30 bg-good-soft px-3.5 py-3 text-[12.5px] text-good-ink">
+            New temporary password: <span className="font-mono font-semibold">{resetPassword.data.temp_password}</span>
+          </div>
+        )}
+        {resetPassword.isError && (
+          <div className="mb-6 rounded-lg border border-bad/30 bg-bad-soft px-3.5 py-3 text-[12.5px] text-bad-ink">
+            {resetPassword.error.response?.data?.error?.message || "Could not reset password."}
+          </div>
+        )}
 
         <span className="mb-3 block text-[13px] font-semibold">Checkpoints Managed</span>
         <div className="flex flex-col gap-1.5">
@@ -78,11 +100,12 @@ function AdminDetail({ admin, onClose }) {
             <div key={c.id} className="flex items-center gap-3 rounded-lg border border-line px-3.5 py-2.5">
               <MapPinned size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
               <div className="flex-1">
-                <div className="font-mono text-[12px] font-medium text-ink">{c.id}</div>
-                <div className="text-[10.5px] text-ink-faint">{c.today} screened today</div>
+                <div className="font-mono text-[12px] font-medium text-ink">{c.code}</div>
+                <div className="text-[10.5px] text-ink-faint">{c.region}</div>
               </div>
-              <span className="font-mono text-[11.5px] text-ink-dim">{c.online} online</span>
-              <Badge variant={c.status === "good" ? "good" : "warn"}>{c.status === "good" ? "Healthy" : "Attention"}</Badge>
+              <Badge variant={c.status === "active" ? "good" : "warn"}>
+                {c.status === "active" ? "Healthy" : "Attention"}
+              </Badge>
             </div>
           ))}
         </div>
@@ -91,16 +114,24 @@ function AdminDetail({ admin, onClose }) {
   );
 }
 
-function AddAdminModal({ onClose, onCreate }) {
-  const [name, setName] = useState("");
+function AddAdminModal({ regions, onClose, onCreated }) {
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [region, setRegion] = useState("");
   const [password, setPassword] = useState("");
+  const createUser = useCreateUser();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onCreate({ name, initials: initialsFor(name), region, team: 0, accuracy: 0, email, joined: "Today" });
+    createUser.mutate(
+      { username, full_name: fullName, email, password, role: "admin", region },
+      { onSuccess: onCreated }
+    );
   };
+
+  const errorMessage =
+    createUser.isError && (createUser.error.response?.data?.error?.message || "Could not create admin.");
 
   return (
     <motion.div
@@ -136,16 +167,36 @@ function AddAdminModal({ onClose, onCreate }) {
           </button>
         </div>
 
+        {errorMessage && (
+          <div className="mb-3.5 rounded-lg border border-bad/30 bg-bad-soft px-3.5 py-2.5 text-[12px] text-bad-ink">
+            {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11.5px] font-medium text-ink-dim">Username</span>
+            <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
+              <User size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+              <input
+                required
+                autoFocus
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. r.khanna"
+                className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
+              />
+            </div>
+          </label>
+
           <label className="flex flex-col gap-1.5">
             <span className="text-[11.5px] font-medium text-ink-dim">Full Name</span>
             <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
               <User size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
               <input
                 required
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. R. Khanna"
                 className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
               />
@@ -176,11 +227,11 @@ function AddAdminModal({ onClose, onCreate }) {
                 list="known-regions"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                placeholder="e.g. North Zone, or a new region"
+                placeholder="e.g. North Zone"
                 className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
               />
               <datalist id="known-regions">
-                {KNOWN_REGIONS.map((r) => (
+                {regions.map((r) => (
                   <option key={r} value={r} />
                 ))}
               </datalist>
@@ -192,6 +243,7 @@ function AddAdminModal({ onClose, onCreate }) {
             <input
               required
               type="password"
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -203,10 +255,11 @@ function AddAdminModal({ onClose, onCreate }) {
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-navy py-3 text-[13px] font-semibold text-white shadow-sm"
+            disabled={createUser.isPending}
+            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-navy py-3 text-[13px] font-semibold text-white shadow-sm disabled:opacity-70"
           >
             <Plus size={15} strokeWidth={2.25} />
-            Create Admin
+            {createUser.isPending ? "Creating…" : "Create Admin"}
           </motion.button>
         </form>
       </motion.div>
@@ -215,13 +268,19 @@ function AddAdminModal({ onClose, onCreate }) {
 }
 
 export default function Admins() {
-  const [admins, setAdmins] = useState(adminsFull);
+  const { data: users = [], isLoading } = useUsers();
+  const { data: checkpoints = [] } = useCheckpoints();
+  const admins = users.filter((u) => u.role === "admin");
+  const verifiers = users.filter((u) => u.role === "verifier");
+  const regions = [...new Set(checkpoints.map((c) => c.region))];
   const [selected, setSelected] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
 
+  const teamFor = (admin) => verifiers.filter((v) => v.region === admin.region).length;
+
   return (
     <>
-      <Topbar title="Admins" subtitle={`${admins.length} admins across all regions`} />
+      <Topbar title="Admins" subtitle={`${admins.length} admin${admins.length === 1 ? "" : "s"} across all regions`} />
 
       <div className="flex justify-end">
         <motion.button
@@ -242,11 +301,15 @@ export default function Admins() {
               <span>NAME</span>
               <span>REGION</span>
               <span>TEAM</span>
-              <span>ACCURACY</span>
+              <span>STATUS</span>
             </div>
+            {isLoading && <p className="px-5 py-4 text-[12px] text-ink-faint">Loading admins…</p>}
+            {!isLoading && admins.length === 0 && (
+              <p className="px-5 py-4 text-[12px] text-ink-faint">No admins yet.</p>
+            )}
             {admins.map((a, i) => (
               <motion.button
-                key={a.name}
+                key={a.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03, duration: 0.35 }}
@@ -255,10 +318,12 @@ export default function Admins() {
                   i !== admins.length - 1 ? "border-b border-line-soft" : ""
                 }`}
               >
-                <span className="text-[12.5px] font-medium text-ink">{a.name}</span>
+                <span className="text-[12.5px] font-medium text-ink">{a.full_name}</span>
                 <span className="text-[12px] text-ink-dim">{a.region}</span>
-                <span className="font-mono text-[12px]">{a.team}</span>
-                <span className="font-mono text-[12px] text-good-ink">{a.accuracy}%</span>
+                <span className="font-mono text-[12px]">{teamFor(a)}</span>
+                <span className={`text-[12px] ${a.status === "active" ? "text-good-ink" : "text-ink-faint"}`}>
+                  {a.status === "active" ? "Active" : "Disabled"}
+                </span>
               </motion.button>
             ))}
           </div>
@@ -266,15 +331,11 @@ export default function Admins() {
       </Card>
 
       <AnimatePresence>
-        {selected && <AdminDetail admin={selected} onClose={() => setSelected(null)} />}
+        {selected && (
+          <AdminDetail admin={selected} team={teamFor(selected)} checkpoints={checkpoints} onClose={() => setSelected(null)} />
+        )}
         {showAdd && (
-          <AddAdminModal
-            onClose={() => setShowAdd(false)}
-            onCreate={(a) => {
-              setAdmins((prev) => [...prev, a]);
-              setShowAdd(false);
-            }}
-          />
+          <AddAdminModal regions={regions} onClose={() => setShowAdd(false)} onCreated={() => setShowAdd(false)} />
         )}
       </AnimatePresence>
     </>

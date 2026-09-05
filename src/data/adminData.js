@@ -1,34 +1,6 @@
-export const verifiersFull = [
-  { name: "R. Sharma", initials: "RS", checkpoint: "CP-04", online: true, today: 96, accuracy: 97.1, joined: "14 Feb 2024" },
-  { name: "K. Nair", initials: "KN", checkpoint: "CP-01", online: true, today: 112, accuracy: 95.4, joined: "02 May 2024" },
-  { name: "P. Verma", initials: "PV", checkpoint: "CP-02", online: false, today: 84, accuracy: 94.8, joined: "19 Nov 2023" },
-  { name: "S. Iyer", initials: "SI", checkpoint: "CP-04", online: true, today: 101, accuracy: 98.0, joined: "07 Jan 2025" },
-  { name: "M. Joshi", initials: "MJ", checkpoint: "CP-06", online: true, today: 58, accuracy: 96.6, joined: "22 Aug 2024" },
-  { name: "T. Reddy", initials: "TR", checkpoint: "CP-02", online: false, today: 0, accuracy: 93.9, joined: "30 Mar 2024" },
-];
-
-export const verifierHistory = [
-  { verifierName: "R. Sharma", ref: "SC-88301", doc: "Passport", verdict: "GENUINE", tone: "good", riskScore: 8, time: "12m ago", checkpoint: "CP-04" },
-  { verifierName: "R. Sharma", ref: "SC-88254", doc: "Passport", verdict: "GENUINE", tone: "good", riskScore: 14, time: "6h ago", checkpoint: "CP-04" },
-  { verifierName: "R. Sharma", ref: "SC-88291", doc: "Passport", verdict: "SUSPICIOUS", tone: "warn", riskScore: 70, time: "3m ago", checkpoint: "CP-04" },
-  { verifierName: "K. Nair", ref: "SC-88296", doc: "Aadhaar", verdict: "GENUINE", tone: "good", riskScore: 4, time: "38m ago", checkpoint: "CP-01" },
-  { verifierName: "K. Nair", ref: "SC-88276", doc: "Aadhaar", verdict: "SUSPICIOUS", tone: "warn", riskScore: 58, time: "22m ago", checkpoint: "CP-01" },
-  { verifierName: "K. Nair", ref: "SC-88198", doc: "Visa", verdict: "FAKE", tone: "bad", riskScore: 91, time: "1h ago", checkpoint: "CP-01" },
-  { verifierName: "P. Verma", ref: "SC-88284", doc: "Visa", verdict: "GENUINE", tone: "good", riskScore: 11, time: "2h ago", checkpoint: "CP-02" },
-  { verifierName: "P. Verma", ref: "SC-88240", doc: "Aadhaar", verdict: "GENUINE", tone: "good", riskScore: 6, time: "5h ago", checkpoint: "CP-02" },
-  { verifierName: "S. Iyer", ref: "SC-88254", doc: "Passport", verdict: "SUSPICIOUS", tone: "warn", riskScore: 58, time: "48m ago", checkpoint: "CP-04" },
-  { verifierName: "S. Iyer", ref: "SC-88271", doc: "Aadhaar", verdict: "GENUINE", tone: "good", riskScore: 6, time: "4h ago", checkpoint: "CP-04" },
-  { verifierName: "M. Joshi", ref: "SC-88279", doc: "Passport", verdict: "FAKE", tone: "bad", riskScore: 91, time: "3h ago", checkpoint: "CP-06" },
-  { verifierName: "M. Joshi", ref: "SC-88266", doc: "Permit", verdict: "SUSPICIOUS", tone: "warn", riskScore: 58, time: "5h ago", checkpoint: "CP-06" },
-];
-
-export const docTypeBreakdown = [
-  { doc: "Passport", count: 612 },
-  { doc: "Aadhaar", count: 398 },
-  { doc: "Visa", count: 201 },
-  { doc: "Permit", count: 73 },
-];
-
+// Illustrative-only placeholder — there is no audit-log listing endpoint on
+// ps188-backend yet, so the zone audit log on admin/AuditLog.jsx stays mocked
+// until one exists.
 export const adminAuditLog = [
   { actor: "R. Sharma", action: "decided", ref: "SC-88301", detail: "screening.decided · ACCEPT", time: "12m ago", tone: "good", type: "decision" },
   { actor: "R. Sharma", action: "escalated", ref: "SC-88291", detail: "screening.decided · ESCALATE", time: "3m ago", tone: "warn", type: "decision" },

@@ -3,6 +3,7 @@ import HeaderShell from "./components/layout/HeaderShell";
 import Landing from "./pages/Landing";
 import SignIn from "./pages/SignIn";
 import Profile from "./pages/Profile";
+import Blacklist from "./pages/Blacklist";
 import VerifierDashboard from "./pages/verifier/VerifierDashboard";
 import VerifierHistory from "./pages/verifier/VerifierHistory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -64,6 +65,7 @@ export default function App() {
             >
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/verifiers" element={<Verifiers />} />
+              <Route path="/admin/blacklist" element={<Blacklist />} />
               <Route path="/admin/reports" element={<Reports />} />
               <Route path="/admin/audit-log" element={<AuditLog />} />
               <Route path="/admin/profile" element={<Profile role={ROLES.admin} />} />
@@ -79,6 +81,7 @@ export default function App() {
               <Route path="/super-admin" element={<SuperAdminDashboard />} />
               <Route path="/super-admin/admins" element={<Admins />} />
               <Route path="/super-admin/checkpoints" element={<Checkpoints />} />
+              <Route path="/super-admin/blacklist" element={<Blacklist />} />
               <Route path="/super-admin/audit-trail" element={<AuditTrail />} />
               <Route path="/super-admin/settings" element={<Settings />} />
               <Route path="/super-admin/profile" element={<Profile role={ROLES.superadmin} />} />

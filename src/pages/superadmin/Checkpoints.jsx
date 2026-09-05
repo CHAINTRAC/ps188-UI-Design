@@ -1,25 +1,26 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPinned, Plus, User, X } from "lucide-react";
+import { MapPinned, Plus, TriangleAlert, User, X } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
-import { adminsFull, checkpointsFull } from "../../data/superAdminData";
+import { useCheckpoints, useCreateCheckpoint } from "../../features/checkpoints/hooks";
+import { useUsers } from "../../features/users/hooks";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All" },
-  { key: "good", label: "Healthy" },
-  { key: "warn", label: "Needs Attention" },
+  { key: "active", label: "Healthy" },
+  { key: "attention", label: "Needs Attention" },
 ];
 
-function RegisterCheckpointModal({ onClose, onCreate }) {
-  const [id, setId] = useState("");
+function RegisterCheckpointModal({ admins, onClose, onCreate, isPending, errorMessage }) {
+  const [code, setCode] = useState("");
   const [region, setRegion] = useState("");
-  const [admin, setAdmin] = useState("");
+  const [adminId, setAdminId] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onCreate({ id, region, admin, online: "0/0", today: 0, status: "warn" });
+    onCreate({ code, region, admin_id: adminId || undefined });
   };
 
   return (
@@ -57,6 +58,13 @@ function RegisterCheckpointModal({ onClose, onCreate }) {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {errorMessage && (
+            <div className="flex items-center gap-2.5 rounded-lg border border-bad/30 bg-bad-soft px-3.5 py-3">
+              <TriangleAlert size={15} strokeWidth={1.75} className="shrink-0 text-bad-ink" />
+              <span className="text-[12.5px] font-medium text-bad-ink">{errorMessage}</span>
+            </div>
+          )}
+
           <label className="flex flex-col gap-1.5">
             <span className="text-[11.5px] font-medium text-ink-dim">Checkpoint ID</span>
             <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
@@ -64,8 +72,8 @@ function RegisterCheckpointModal({ onClose, onCreate }) {
               <input
                 required
                 autoFocus
-                value={id}
-                onChange={(e) => setId(e.target.value)}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
                 placeholder="e.g. CP-23"
                 className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
               />
@@ -87,19 +95,18 @@ function RegisterCheckpointModal({ onClose, onCreate }) {
             <span className="text-[11.5px] font-medium text-ink-dim">Assign Admin</span>
             <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
               <User size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
-              <input
-                required
-                list="known-admins"
-                value={admin}
-                onChange={(e) => setAdmin(e.target.value)}
-                placeholder="e.g. A. Mehta"
-                className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-faint"
-              />
-              <datalist id="known-admins">
-                {adminsFull.map((a) => (
-                  <option key={a.name} value={a.name} />
+              <select
+                value={adminId}
+                onChange={(e) => setAdminId(e.target.value)}
+                className="w-full bg-transparent text-[13px] text-ink outline-none"
+              >
+                <option value="">Unassigned</option>
+                {admins.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </label>
 
@@ -107,10 +114,17 @@ function RegisterCheckpointModal({ onClose, onCreate }) {
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-navy py-3 text-[13px] font-semibold text-white shadow-sm"
+            disabled={isPending}
+            className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-navy py-3 text-[13px] font-semibold text-white shadow-sm disabled:opacity-70"
           >
-            <Plus size={15} strokeWidth={2.25} />
-            Register Checkpoint
+            {isPending ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <>
+                <Plus size={15} strokeWidth={2.25} />
+                Register Checkpoint
+              </>
+            )}
           </motion.button>
         </form>
       </motion.div>
@@ -119,9 +133,15 @@ function RegisterCheckpointModal({ onClose, onCreate }) {
 }
 
 export default function Checkpoints() {
-  const [checkpoints, setCheckpoints] = useState(checkpointsFull);
+  const { data: checkpoints = [], isLoading } = useCheckpoints();
+  const { data: users = [] } = useUsers();
+  const createCheckpoint = useCreateCheckpoint();
   const [status, setStatus] = useState("all");
   const [showAdd, setShowAdd] = useState(false);
+
+  const admins = users.filter((u) => u.role === "admin");
+  const adminName = (adminId) => admins.find((a) => a.id === adminId)?.full_name || "Unassigned";
+  const verifierCount = (code) => users.filter((u) => u.role === "verifier" && u.checkpoint_id === code).length;
 
   const rows = status === "all" ? checkpoints : checkpoints.filter((c) => c.status === status);
 
@@ -159,35 +179,37 @@ export default function Checkpoints() {
       <Card noPad delay={0.05}>
         <div className="overflow-x-auto">
           <div className="min-w-[520px]">
-            <div className="grid grid-cols-[0.8fr_1fr_1fr_0.8fr_0.8fr_1fr] gap-2 border-b border-line-soft px-5 py-3 text-[10.5px] tracking-wide text-ink-faint">
-              <span>ID</span>
+            <div className="grid grid-cols-[0.8fr_1fr_1fr_0.8fr_1fr] gap-2 border-b border-line-soft px-5 py-3 text-[10.5px] tracking-wide text-ink-faint">
+              <span>CODE</span>
               <span>REGION</span>
               <span>ADMIN</span>
-              <span>ONLINE</span>
-              <span>TODAY</span>
+              <span>VERIFIERS</span>
               <span>STATUS</span>
             </div>
-            {rows.map((c, i) => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.35 }}
-                className={`grid grid-cols-[0.8fr_1fr_1fr_0.8fr_0.8fr_1fr] items-center gap-2 px-5 py-3.5 transition-colors hover:bg-surface-sunken/60 ${
-                  i !== rows.length - 1 ? "border-b border-line-soft" : ""
-                }`}
-              >
-                <span className="font-mono text-[12.5px] font-medium">{c.id}</span>
-                <span className="text-[12px] text-ink-dim">{c.region}</span>
-                <span className="text-[12px]">{c.admin}</span>
-                <span className="font-mono text-[12px]">{c.online}</span>
-                <span className="font-mono text-[12px]">{c.today}</span>
-                <Badge variant={c.status === "good" ? "good" : "warn"} className="w-fit">
-                  {c.status === "good" ? "Healthy" : "Attention"}
-                </Badge>
-              </motion.div>
-            ))}
-            {rows.length === 0 && (
+            {isLoading && (
+              <div className="px-5 py-10 text-center text-[12.5px] text-ink-faint">Loading checkpoints…</div>
+            )}
+            {!isLoading &&
+              rows.map((c, i) => (
+                <motion.div
+                  key={c.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.35 }}
+                  className={`grid grid-cols-[0.8fr_1fr_1fr_0.8fr_1fr] items-center gap-2 px-5 py-3.5 transition-colors hover:bg-surface-sunken/60 ${
+                    i !== rows.length - 1 ? "border-b border-line-soft" : ""
+                  }`}
+                >
+                  <span className="font-mono text-[12.5px] font-medium">{c.code}</span>
+                  <span className="text-[12px] text-ink-dim">{c.region}</span>
+                  <span className="text-[12px]">{adminName(c.admin_id)}</span>
+                  <span className="font-mono text-[12px]">{verifierCount(c.code)}</span>
+                  <Badge variant={c.status === "active" ? "good" : "warn"} className="w-fit">
+                    {c.status === "active" ? "Healthy" : "Attention"}
+                  </Badge>
+                </motion.div>
+              ))}
+            {!isLoading && rows.length === 0 && (
               <div className="px-5 py-10 text-center text-[12.5px] text-ink-faint">No checkpoints match this filter.</div>
             )}
           </div>
@@ -197,10 +219,17 @@ export default function Checkpoints() {
       <AnimatePresence>
         {showAdd && (
           <RegisterCheckpointModal
+            admins={admins}
+            isPending={createCheckpoint.isPending}
+            errorMessage={
+              createCheckpoint.isError &&
+              (createCheckpoint.error.response?.data?.error?.message || "Something went wrong. Try again.")
+            }
             onClose={() => setShowAdd(false)}
-            onCreate={(c) => {
-              setCheckpoints((prev) => [...prev, c]);
-              setShowAdd(false);
+            onCreate={(payload) => {
+              createCheckpoint.mutate(payload, {
+                onSuccess: () => setShowAdd(false),
+              });
             }}
           />
         )}

@@ -8,6 +8,7 @@ import {
   Building2,
   MapPinned,
   Settings2,
+  Ban,
 } from "lucide-react";
 
 export const ROLES = {
@@ -37,6 +38,7 @@ export const ROLES = {
     nav: [
       { label: "Team Overview", icon: LayoutGrid, path: "/admin" },
       { label: "Verifiers", icon: Users, path: "/admin/verifiers" },
+      { label: "Blacklist", icon: Ban, path: "/admin/blacklist" },
       { label: "Reports", icon: FileBarChart2, path: "/admin/reports" },
       { label: "Audit Log", icon: ScrollText, path: "/admin/audit-log" },
     ],
@@ -54,6 +56,7 @@ export const ROLES = {
       { label: "Org Overview", icon: LayoutGrid, path: "/super-admin" },
       { label: "Admins", icon: Users, path: "/super-admin/admins" },
       { label: "Checkpoints", icon: MapPinned, path: "/super-admin/checkpoints" },
+      { label: "Blacklist", icon: Ban, path: "/super-admin/blacklist" },
       { label: "Audit Trail", icon: ScrollText, path: "/super-admin/audit-trail" },
       { label: "Settings", icon: Settings2, path: "/super-admin/settings" },
     ],

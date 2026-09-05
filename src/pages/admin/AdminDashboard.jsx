@@ -5,7 +5,11 @@ import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import StatCard from "../../components/ui/StatCard";
-import { adminStats, flaggedCases, verifiers, weeklyVolume } from "../../data/mockData";
+import { useMe } from "../../features/auth/hooks";
+import { useUsers } from "../../features/users/hooks";
+import { useCheckpoints } from "../../features/checkpoints/hooks";
+import { useScreenings } from "../../features/screenings/hooks";
+import { timeAgo } from "../../lib/format";
 import { BAD, GOOD, WARN } from "../../lib/chartColors";
 
 function ChartTooltip({ active, payload, label }) {
@@ -23,13 +27,75 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return d.toDateString() === now.toDateString();
+}
+
+function buildWeeklyVolume(screenings) {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({ key: d.toDateString(), day: d.toLocaleDateString("en-US", { weekday: "short" }), genuine: 0, suspicious: 0, fake: 0 });
+  }
+  const byKey = Object.fromEntries(days.map((d) => [d.key, d]));
+  for (const s of screenings) {
+    const bucket = byKey[new Date(s.created_at).toDateString()];
+    if (!bucket) continue;
+    if (s.verdict_band === "GENUINE") bucket.genuine += 1;
+    else if (s.verdict_band === "FAKE") bucket.fake += 1;
+    else bucket.suspicious += 1;
+  }
+  return days;
+}
+
+function avgDecisionSeconds(screenings) {
+  const decided = screenings.filter((s) => s.officer_decision);
+  if (decided.length === 0) return 0;
+  const total = decided.reduce((sum, s) => sum + (new Date(s.officer_decision.decided_at) - new Date(s.created_at)), 0);
+  return Math.round(total / decided.length / 1000);
+}
+
 export default function AdminDashboard() {
+  const { data: me } = useMe();
+  const { data: users = [] } = useUsers();
+  const { data: checkpoints = [] } = useCheckpoints();
+  const { data: screenings = [] } = useScreenings();
+
+  const verifiers = users.filter((u) => u.role === "verifier" && (!me?.region || u.region === me.region));
+  const officerNameById = Object.fromEntries(verifiers.map((v) => [v.id, v.full_name]));
+
+  const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
+  const decidedToday = todaysScreenings.filter((s) => s.officer_decision);
+  const decisionRate = todaysScreenings.length ? (decidedToday.length / todaysScreenings.length) * 100 : 0;
+  const escalatedCount = screenings.filter((s) => s.officer_decision?.decision === "escalate").length;
+
+  const stats = [
+    { label: "Verifications Today", value: todaysScreenings.length },
+    { label: "Decision Rate", value: decisionRate, decimals: 1, suffix: "%" },
+    { label: "Avg Decision Time", value: avgDecisionSeconds(screenings), suffix: "s" },
+    { label: "Escalated Cases", value: escalatedCount, tone: "warn", accent: true },
+  ];
+
+  const weeklyVolume = buildWeeklyVolume(screenings);
+
+  const flaggedCases = screenings
+    .filter((s) => !s.officer_decision && (s.verdict_band !== "GENUINE" || s.flags?.includes("blacklist_hit")))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 6);
+
   return (
     <>
-      <Topbar title="Team Overview" subtitle="North Zone · 6 checkpoints · 14 verifiers" />
+      <Topbar
+        title="Team Overview"
+        subtitle={`${me?.region || "—"} · ${checkpoints.length} checkpoints · ${verifiers.length} verifiers`}
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {adminStats.map((s, i) => (
+        {stats.map((s, i) => (
           <StatCard key={s.label} delay={0.02 * i} {...s} />
         ))}
       </div>
@@ -73,31 +139,33 @@ export default function AdminDashboard() {
           <Card delay={0.12}>
             <span className="mb-3.5 block text-[13.5px] font-semibold">Verifiers</span>
             <div className="overflow-x-auto">
-              <div className="min-w-[480px]">
-                <div className="grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
+              <div className="min-w-[420px]">
+                <div className="grid grid-cols-[1.4fr_1fr_0.8fr_0.8fr] gap-2 border-b border-line pb-2.5 text-[10.5px] tracking-wide text-ink-faint">
                   <span>NAME</span>
                   <span>CHECKPOINT</span>
                   <span>STATUS</span>
                   <span>TODAY</span>
-                  <span>ACCURACY</span>
                 </div>
-                {verifiers.map((v, i) => (
-                  <div
-                    key={v.name}
-                    className={`grid grid-cols-[1.4fr_1fr_0.8fr_1fr_1fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
-                      i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
-                    }`}
-                  >
-                    <span className="text-[12.5px] font-medium">{v.name}</span>
-                    <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint}</span>
-                    <span className={`flex items-center gap-1.5 text-[11px] ${v.online ? "text-good-ink" : "text-ink-faint"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${v.online ? "bg-good" : "bg-line"}`} />
-                      {v.online ? "Online" : "Offline"}
-                    </span>
-                    <span className="font-mono text-[12px]">{v.today}</span>
-                    <span className="font-mono text-[12px]">{v.accuracy.toFixed(1)}%</span>
-                  </div>
-                ))}
+                {verifiers.map((v, i) => {
+                  const today = todaysScreenings.filter((s) => s.officer_id === v.id).length;
+                  return (
+                    <div
+                      key={v.id}
+                      className={`grid grid-cols-[1.4fr_1fr_0.8fr_0.8fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
+                        i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
+                      }`}
+                    >
+                      <span className="text-[12.5px] font-medium">{v.full_name}</span>
+                      <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint_id}</span>
+                      <span className={`flex items-center gap-1.5 text-[11px] ${v.status === "active" ? "text-good-ink" : "text-ink-faint"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${v.status === "active" ? "bg-good" : "bg-line"}`} />
+                        {v.status === "active" ? "Active" : "Disabled"}
+                      </span>
+                      <span className="font-mono text-[12px]">{today}</span>
+                    </div>
+                  );
+                })}
+                {verifiers.length === 0 && <div className="py-4 text-[12px] text-ink-faint">No verifiers in this region yet.</div>}
               </div>
             </div>
           </Card>
@@ -106,29 +174,34 @@ export default function AdminDashboard() {
         <Card delay={0.1}>
           <div className="mb-3.5 flex items-center justify-between">
             <span className="text-[13.5px] font-semibold">Flagged for Review</span>
-            <Badge variant="bad">5 new</Badge>
+            <Badge variant="bad">{flaggedCases.length} new</Badge>
           </div>
           <div className="flex flex-col">
             {flaggedCases.map((c, i) => (
               <motion.div
-                key={c.ref}
+                key={c.id}
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + i * 0.06 }}
                 className="flex cursor-pointer items-center gap-3 rounded-lg px-1.5 py-2.5 transition-colors hover:bg-surface-sunken/60"
               >
-                <FileText size={16} strokeWidth={1.75} className={c.tone === "bad" ? "text-bad shrink-0" : "text-warn-ink shrink-0"} />
+                <FileText
+                  size={16}
+                  strokeWidth={1.75}
+                  className={c.verdict_band === "FAKE" ? "text-bad shrink-0" : "text-warn-ink shrink-0"}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] font-medium">
-                    {c.doc} · <span className="font-mono">{c.ref}</span>
+                    {c.doc_type} · <span className="font-mono">{c.reference_no}</span>
                   </div>
                   <div className="text-[10.5px] text-ink-faint">
-                    {c.officer} · {c.checkpoint} · {c.time}
+                    {officerNameById[c.officer_id] || c.officer_id} · {c.checkpoint_id} · {timeAgo(c.created_at)}
                   </div>
                 </div>
-                <Badge variant={c.tone}>{c.verdict}</Badge>
+                <Badge variant={c.verdict_band === "FAKE" ? "bad" : "warn"}>{c.verdict}</Badge>
               </motion.div>
             ))}
+            {flaggedCases.length === 0 && <div className="py-4 text-[12px] text-ink-faint">Nothing flagged right now.</div>}
           </div>
         </Card>
       </div>
