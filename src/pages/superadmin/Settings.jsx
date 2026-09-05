@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
+import Select from "../../components/ui/Select";
 
 function Toggle({ checked, onChange, label, description }) {
   return (
@@ -80,16 +81,17 @@ export default function Settings() {
                 <div className="text-[13px] font-medium text-ink">Session timeout</div>
                 <p className="mt-0.5 text-[11.5px] text-ink-faint">Automatically sign out after inactivity.</p>
               </div>
-              <select
+              <Select
+                className="w-32"
                 value={sessionTimeout}
-                onChange={(e) => setSessionTimeout(e.target.value)}
-                className="rounded-lg border border-line bg-surface-sunken/60 px-3 py-1.5 text-[12.5px] text-ink outline-none focus:border-brand"
-              >
-                <option value="30m">30 min</option>
-                <option value="1h">1 hour</option>
-                <option value="4h">4 hours</option>
-                <option value="8h">8 hours</option>
-              </select>
+                onChange={setSessionTimeout}
+                options={[
+                  { value: "30m", label: "30 min" },
+                  { value: "1h", label: "1 hour" },
+                  { value: "4h", label: "4 hours" },
+                  { value: "8h", label: "8 hours" },
+                ]}
+              />
             </div>
           </div>
         </Card>

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
+import { useNetworkStore } from "../store/networkStore";
 
 const ERR_TOKEN_EXPIRED = 20003; // ps188-backend/internal/apperr
 
@@ -33,10 +34,16 @@ function forceLogout() {
 }
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    useNetworkStore.getState().setServerDown(false);
+    return res;
+  },
   async (error) => {
     const { config, response } = error;
-    if (!response || !config) return Promise.reject(error);
+    if (!response || !config) {
+      useNetworkStore.getState().setServerDown(true); // no HTTP response at all — server unreachable, not an auth problem
+      return Promise.reject(error);
+    }
 
     const isAuthEndpoint = config.url?.includes("/auth/"); // a failed login must surface to the form, not force a logout
     if (isAuthEndpoint) return Promise.reject(error);

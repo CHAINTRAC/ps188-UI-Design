@@ -18,6 +18,7 @@ import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import RiskGauge from "../../components/ui/RiskGauge";
+import Select from "../../components/ui/Select";
 import CameraCaptureModal from "../../components/verifier/CameraCaptureModal";
 import { STAGES } from "../../data/verifierScenarios";
 import { useSubmitScreening, useDecideScreening } from "../../features/screenings/hooks";
@@ -202,17 +203,11 @@ export default function VerifierDashboard() {
               <div className="mt-3.5 grid grid-cols-2 gap-2.5">
                 <label className="col-span-2 flex flex-col gap-1">
                   <span className="text-[11px] font-medium text-ink-dim">Document type</span>
-                  <select
+                  <Select
                     value={docType}
-                    onChange={(e) => setDocType(e.target.value)}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  >
-                    {DOC_TYPES.map((d) => (
-                      <option key={d.value} value={d.value}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setDocType}
+                    options={DOC_TYPES.map((d) => ({ value: d.value, label: d.label }))}
+                  />
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-medium text-ink-dim">Document no. (optional)</span>

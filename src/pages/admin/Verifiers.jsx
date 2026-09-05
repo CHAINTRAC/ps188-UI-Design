@@ -4,6 +4,7 @@ import { FileText, KeyRound, Mail, MapPin, Plus, User, UserPlus, X } from "lucid
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import Select from "../../components/ui/Select";
 import ScreeningDetailModal from "../../components/shared/ScreeningDetailModal";
 import { useUsers, useCreateUser, useResetUserPassword } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
@@ -247,24 +248,17 @@ function AddVerifierModal({ checkpoints, onClose, onCreated }) {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11.5px] font-medium text-ink-dim">Checkpoint</span>
-            <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
-              <MapPin size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
-              <select
-                required
-                value={checkpointId}
-                onChange={(e) => setCheckpointId(e.target.value)}
-                className="w-full bg-transparent text-[13px] text-ink outline-none"
-              >
-                <option value="" disabled>
-                  Select a checkpoint
-                </option>
-                {checkpoints.map((cp) => (
-                  <option key={cp.id} value={cp.code}>
-                    {cp.code}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              required
+              value={checkpointId}
+              onChange={setCheckpointId}
+              icon={MapPin}
+              placeholder="Select a checkpoint"
+              options={checkpoints.map((cp) => ({ value: cp.code, label: cp.code }))}
+            />
+            {checkpoints.length === 0 && (
+              <p className="text-[11px] text-warn-ink">No checkpoints yet — ask a super admin to register one first.</p>
+            )}
           </label>
 
           <label className="flex flex-col gap-1.5">

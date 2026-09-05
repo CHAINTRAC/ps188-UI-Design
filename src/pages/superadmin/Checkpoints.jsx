@@ -4,6 +4,7 @@ import { MapPinned, Plus, TriangleAlert, User, X } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import Select from "../../components/ui/Select";
 import { useCheckpoints, useCreateCheckpoint } from "../../features/checkpoints/hooks";
 import { useUsers } from "../../features/users/hooks";
 
@@ -93,21 +94,12 @@ function RegisterCheckpointModal({ admins, onClose, onCreate, isPending, errorMe
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11.5px] font-medium text-ink-dim">Assign Admin</span>
-            <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken/60 px-3.5 py-2.5 focus-within:border-brand">
-              <User size={14} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
-              <select
-                value={adminId}
-                onChange={(e) => setAdminId(e.target.value)}
-                className="w-full bg-transparent text-[13px] text-ink outline-none"
-              >
-                <option value="">Unassigned</option>
-                {admins.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              value={adminId}
+              onChange={setAdminId}
+              icon={User}
+              options={[{ value: "", label: "Unassigned" }, ...admins.map((a) => ({ value: a.id, label: a.full_name }))]}
+            />
           </label>
 
           <motion.button
