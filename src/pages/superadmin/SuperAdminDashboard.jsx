@@ -1,12 +1,14 @@
 import { Check, Settings2, TriangleAlert, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
 import { useUsers } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
 import { useScreenings } from "../../features/screenings/hooks";
-import { auditTrail } from "../../data/mockData";
+import { useAuditLogs } from "../../features/audit/hooks";
+import { describeAuditEntry } from "../../features/audit/format";
 
 const ACTION_ICON = {
   good: { Icon: Check, bg: "bg-good-soft", fg: "text-good-ink" },
@@ -26,10 +28,13 @@ export default function SuperAdminDashboard() {
   const { data: users = [] } = useUsers();
   const { data: checkpoints = [] } = useCheckpoints();
   const { data: screenings = [] } = useScreenings();
+  const { data: auditEntries = [] } = useAuditLogs({ limit: 5 });
 
   const admins = users.filter((u) => u.role === "admin");
   const verifiers = users.filter((u) => u.role === "verifier");
   const adminById = Object.fromEntries(admins.map((a) => [a.id, a]));
+  const usersById = Object.fromEntries(users.map((u) => [u.id, u.full_name]));
+  const auditTrail = auditEntries.map((e) => describeAuditEntry(e, usersById));
 
   const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
   const decidedCount = screenings.filter((s) => s.officer_decision).length;
@@ -124,13 +129,16 @@ export default function SuperAdminDashboard() {
         <Card delay={0.1}>
           <div className="mb-4 flex items-center justify-between">
             <span className="text-[13.5px] font-semibold">Audit Trail</span>
-            <a href="#" className="text-[11.5px] font-medium">
+            <Link to="/super-admin/audit-trail" className="text-[11.5px] font-medium">
               View all
-            </a>
+            </Link>
           </div>
           <div className="flex flex-col">
+            {auditTrail.length === 0 && (
+              <div className="py-4 text-[12px] text-ink-faint">No activity yet.</div>
+            )}
             {auditTrail.map((e, i) => {
-              const { Icon, bg, fg } = ACTION_ICON[e.tone];
+              const { Icon, bg, fg } = ACTION_ICON[e.tone] ?? ACTION_ICON.brand;
               const last = i === auditTrail.length - 1;
               return (
                 <motion.div
