@@ -64,7 +64,7 @@ export default function AuditTrailView({ title, subtitle }) {
         <div className="flex flex-col">
           {rows.map((e, i) => {
             const Icon = iconFor(e);
-            const style = TONE_STYLE[e.type === "decision" ? e.tone : "brand"];
+            const style = TONE_STYLE[e.tone] ?? TONE_STYLE.brand;
             const last = i === rows.length - 1;
             return (
               <motion.div

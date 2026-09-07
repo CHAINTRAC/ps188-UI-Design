@@ -47,7 +47,7 @@ const ACTION_META = {
   "screening.submitted": {
     type: "user",
     tone: (e) => VERDICT_TONE[e.new_data?.verdict] ?? "brand",
-    verb: (e) => `submitted screening ${e.new_data?.reference_no ?? ""}`.trim(),
+    verb: () => "submitted screening",
   },
   "screening.decided": {
     type: "decision",
