@@ -23,6 +23,7 @@ import CameraCaptureModal from "../../components/verifier/CameraCaptureModal";
 import { STAGES } from "../../data/verifierScenarios";
 import { useSubmitScreening, useDecideScreening } from "../../features/screenings/hooks";
 import { useMe } from "../../features/auth/hooks";
+import { useDashboardSummary } from "../../features/dashboard/hooks";
 
 const STAGE_ICONS = { ocr: ScanLine, checksum: FileCheck2, tamper: ScanSearch, face: ScanFace, blacklist: ShieldAlert };
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
@@ -46,6 +47,7 @@ async function dataUrlToFile(dataUrl, filename) {
 export default function VerifierDashboard() {
   const fileInputRef = useRef(null);
   const { data: me } = useMe();
+  const { data: summary } = useDashboardSummary();
   const submitMutation = useSubmitScreening();
   const decideMutation = useDecideScreening();
 
@@ -351,6 +353,36 @@ export default function VerifierDashboard() {
 
         {/* RIGHT */}
         <div className="flex flex-col gap-5">
+          <Card delay={0.02}>
+            <span className="mb-3 block text-[13.5px] font-semibold">Today's Shift</span>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Screened", value: summary?.screenings_today ?? 0 },
+                { label: "Decided", value: summary?.decided_today ?? 0 },
+                { label: "Pending", value: summary?.pending_decisions ?? 0 },
+              ].map((m) => (
+                <div key={m.label} className="rounded-lg border border-line bg-surface-sunken/40 px-3 py-2.5">
+                  <div className="font-display text-[20px] font-bold leading-none tabular-nums text-ink">{m.value}</div>
+                  <div className="mt-1 text-[10.5px] text-ink-faint">{m.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-3 border-t border-line-soft pt-3 text-[11px] text-ink-dim">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-good" />
+                {summary?.verdict_split?.genuine ?? 0} genuine
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-warn" />
+                {summary?.verdict_split?.suspicious ?? 0} suspicious
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-bad" />
+                {summary?.verdict_split?.fake ?? 0} fake
+              </span>
+            </div>
+          </Card>
+
           {status !== "done" && (
             <Card delay={0.04} noPad className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-sunken">

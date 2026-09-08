@@ -19,6 +19,22 @@ const ACTION_META = {
     tone: () => "brand",
     verb: () => "changed their password",
   },
+  "user.updated": {
+    type: "user",
+    tone: () => "brand",
+    verb: (e) => `updated ${e.new_data?.target_username ?? "an account"}`,
+  },
+  "user.role_changed": {
+    type: "user",
+    tone: () => "warn",
+    verb: (e) =>
+      `changed ${e.new_data?.target_username ?? "an account"} to ${e.new_data?.role ?? "a new role"}`,
+  },
+  "user.disabled": {
+    type: "user",
+    tone: () => "bad",
+    verb: (e) => `disabled ${e.new_data?.target_username ?? "an account"}`,
+  },
   "user.password_reset": {
     type: "user",
     tone: () => "warn",

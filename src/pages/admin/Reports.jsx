@@ -5,7 +5,7 @@ import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
 import { useMe } from "../../features/auth/hooks";
 import { useUsers } from "../../features/users/hooks";
-import { useScreenings } from "../../features/screenings/hooks";
+import { useReports } from "../../features/reports/hooks";
 import { BAD, BRAND, GOOD, WARN } from "../../lib/chartColors";
 
 const DOC_LABEL = {
@@ -31,71 +31,38 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function isToday(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
-}
-
-function buildWeeklyVolume(screenings) {
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push({ key: d.toDateString(), day: d.toLocaleDateString("en-US", { weekday: "short" }), genuine: 0, suspicious: 0, fake: 0 });
-  }
-  const byKey = Object.fromEntries(days.map((d) => [d.key, d]));
-  for (const s of screenings) {
-    const bucket = byKey[new Date(s.created_at).toDateString()];
-    if (!bucket) continue;
-    if (s.verdict_band === "GENUINE") bucket.genuine += 1;
-    else if (s.verdict_band === "FAKE") bucket.fake += 1;
-    else bucket.suspicious += 1;
-  }
-  return days;
-}
-
-function avgDecisionSeconds(screenings) {
-  const decided = screenings.filter((s) => s.officer_decision);
-  if (decided.length === 0) return 0;
-  const total = decided.reduce((sum, s) => sum + (new Date(s.officer_decision.decided_at) - new Date(s.created_at)), 0);
-  return Math.round(total / decided.length / 1000);
-}
-
 export default function Reports() {
   const { data: me } = useMe();
   const { data: users = [] } = useUsers();
-  const { data: screenings = [] } = useScreenings();
+  const { data: report } = useReports();
 
+  const r = report ?? {};
   const verifiers = users.filter((u) => u.role === "verifier" && (!me?.region || u.region === me.region));
-
-  const totalScreenings = screenings.length;
-  const fakeCount = screenings.filter((s) => s.verdict_band === "FAKE").length;
-  const fakeRate = totalScreenings ? ((fakeCount / totalScreenings) * 100).toFixed(1) : "0.0";
-  const escalatedCount = screenings.filter((s) => s.officer_decision?.decision === "escalate").length;
-
-  const weeklyVolume = buildWeeklyVolume(screenings);
-
-  const docCounts = screenings.reduce((acc, s) => {
-    acc[s.doc_type] = (acc[s.doc_type] || 0) + 1;
+  const verifiersByCheckpoint = verifiers.reduce((acc, v) => {
+    if (v.checkpoint_id) acc[v.checkpoint_id] = (acc[v.checkpoint_id] || 0) + 1;
     return acc;
   }, {});
-  const docTypeBreakdown = Object.entries(docCounts)
-    .map(([doc, count]) => ({ doc: DOC_LABEL[doc] || doc, count }))
-    .sort((a, b) => b.count - a.count);
+
+  const weeklyVolume = r.weekly_volume ?? [];
+  const docTypeBreakdown = (r.doc_type_breakdown ?? []).map((d) => ({
+    doc: DOC_LABEL[d.doc_type] || d.doc_type,
+    count: d.count,
+  }));
   const maxDocCount = Math.max(1, ...docTypeBreakdown.map((d) => d.count));
 
-  const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
-  const checkpointBreakdown = Object.values(
-    verifiers.reduce((acc, v) => {
-      if (!v.checkpoint_id) return acc;
-      acc[v.checkpoint_id] ??= { checkpoint: v.checkpoint_id, verifiers: 0 };
-      acc[v.checkpoint_id].verifiers += 1;
-      return acc;
-    }, {})
-  )
-    .map((c) => ({ ...c, today: todaysScreenings.filter((s) => s.checkpoint_id === c.checkpoint).length }))
+  // The backend reports screenings-today per checkpoint; verifier headcount is
+  // org-structure data and comes from the users list.
+  const checkpointIds = new Set([
+    ...(r.checkpoint_breakdown ?? []).map((c) => c.id),
+    ...Object.keys(verifiersByCheckpoint),
+  ]);
+  const todayByCheckpoint = Object.fromEntries((r.checkpoint_breakdown ?? []).map((c) => [c.id, c.today]));
+  const checkpointBreakdown = [...checkpointIds]
+    .map((id) => ({
+      checkpoint: id,
+      verifiers: verifiersByCheckpoint[id] || 0,
+      today: todayByCheckpoint[id] || 0,
+    }))
     .sort((a, b) => b.today - a.today);
 
   return (
@@ -103,10 +70,10 @@ export default function Reports() {
       <Topbar title="Reports" subtitle={`${me?.region || "—"} · trends & breakdowns`} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Screenings This Week" value={totalScreenings} delay={0} />
-        <StatCard label="Fake Detection Rate" value={fakeRate} decimals={1} suffix="%" tone="bad" accent delay={0.03} />
-        <StatCard label="Avg Decision Time" value={avgDecisionSeconds(screenings)} suffix="s" delay={0.06} />
-        <StatCard label="Escalated Cases" value={escalatedCount} tone="warn" accent delay={0.09} />
+        <StatCard label="Total Screenings" value={r.total_screenings ?? 0} delay={0} />
+        <StatCard label="Fake Detection Rate" value={r.fake_rate ?? 0} decimals={1} suffix="%" tone="bad" accent delay={0.03} />
+        <StatCard label="Avg Decision Time" value={r.avg_decision_seconds ?? 0} suffix="s" delay={0.06} />
+        <StatCard label="Escalated Cases" value={r.escalated ?? 0} tone="warn" accent delay={0.09} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.4fr_1fr]">

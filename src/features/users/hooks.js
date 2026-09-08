@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createUser, listUsers, resetUserPassword, changeOwnPassword } from "./services";
+import { createUser, listUsers, updateUser, resetUserPassword, changeOwnPassword } from "./services";
 
 export function useUsers(params = {}) {
   return useQuery({
@@ -16,6 +16,17 @@ export function useCreateUser() {
     onSuccess: () => {
       // responses are a single new user, not the full varying-filter list — invalidate rather than patch
       queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }) => updateUser(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     },
   });
 }

@@ -10,14 +10,14 @@ unwires a page — don't let it drift.
 |---|---|
 | `SignIn.jsx` | `POST /auth/login` |
 | `Profile.jsx` | `GET /users/profile`, `POST /users/change-password` |
-| `verifier/VerifierDashboard.jsx` | `POST /screenings`, `POST /screenings/:id/decision` |
+| `verifier/VerifierDashboard.jsx` | `POST /screenings`, `POST /screenings/:id/decision`, `GET /dashboard/summary` ("Today's Shift" card) |
 | `verifier/VerifierHistory.jsx` | `GET /screenings`, `GET /screenings/:id`, `GET /screenings/:id/image` |
-| `admin/AdminDashboard.jsx` | `GET /users`, `GET /checkpoints`, `GET /screenings` (stats derived client-side) |
-| `admin/Verifiers.jsx` | `GET/POST /users`, `POST /users/:id/reset-password`, `GET /checkpoints`, `GET /screenings` |
-| `admin/Reports.jsx` | `GET /users`, `GET /screenings` (breakdowns derived client-side) |
+| `admin/AdminDashboard.jsx` | `GET /dashboard/summary` (stats, weekly volume, verifier/checkpoint activity, flagged cases), `GET /users` + `GET /checkpoints` (roster names / counts only) |
+| `admin/Verifiers.jsx` | `GET/POST/PATCH /users`, `POST /users/:id/reset-password`, `GET /checkpoints`, `GET /screenings`. `PATCH` = enable/disable + checkpoint reassign in the detail drawer. |
+| `admin/Reports.jsx` | `GET /reports` (breakdowns, rates, weekly volume), `GET /users` (verifier headcount per checkpoint) |
 | `admin/Blacklist.jsx` | `GET/POST /blacklist`, `POST /blacklist/:id/deactivate` |
-| `superadmin/SuperAdminDashboard.jsx` | `GET /users`, `GET /checkpoints`, `GET /screenings` (org stats derived client-side), `GET /audit-logs` via `features/audit/` (Audit Trail card, latest 5) |
-| `superadmin/Admins.jsx` | `GET/POST /users`, `POST /users/:id/reset-password`, `GET /checkpoints` |
+| `superadmin/SuperAdminDashboard.jsx` | `GET /dashboard/summary` (org totals, screenings today, decision rate, per-checkpoint today), `GET /users` + `GET /checkpoints` (admin/checkpoint tables), `GET /audit-logs` via `features/audit/` (Audit Trail card, latest 5) |
+| `superadmin/Admins.jsx` | `GET/POST/PATCH /users`, `POST /users/:id/reset-password`, `GET /checkpoints`. `PATCH` = enable/disable + region reassign + role change in the detail drawer. |
 | `superadmin/Checkpoints.jsx` | `GET/POST /checkpoints`, `GET /users` (admin picker) |
 | `superadmin/Blacklist.jsx` | same as `admin/Blacklist.jsx` (shared component, both routes) |
 | `components/shared/ScreeningDetailModal.jsx` | `GET /screenings/:id`, `GET /screenings/:id/image` |

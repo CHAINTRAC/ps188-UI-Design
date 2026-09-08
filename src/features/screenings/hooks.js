@@ -59,6 +59,8 @@ export function useSubmitScreening() {
     onSuccess: (screening) => {
       queryClient.setQueryData(["screenings", screening.id], screening);
       queryClient.invalidateQueries({ queryKey: ["screenings"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
   });
 }
@@ -70,6 +72,8 @@ export function useDecideScreening() {
     onSuccess: (screening) => {
       queryClient.setQueryData(["screenings", screening.id], screening);
       queryClient.invalidateQueries({ queryKey: ["screenings"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
   });
 }
