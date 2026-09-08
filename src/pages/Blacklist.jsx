@@ -55,7 +55,7 @@ function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
         exit={{ opacity: 0, y: 12, scale: 0.97 }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[440px] rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+        className="w-full max-w-[440px] rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
       >
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-3">

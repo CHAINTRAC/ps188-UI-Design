@@ -58,7 +58,7 @@ function AdminDetail({ admin, team, checkpoints, regions, onClose }) {
         exit={{ opacity: 0, y: 12, scale: 0.97 }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+        className="max-h-[85vh] w-full max-w-[560px] overflow-y-auto rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ function AdminDetail({ admin, team, checkpoints, regions, onClose }) {
           </button>
         </div>
 
-        <div className="mb-6 grid grid-cols-3 gap-3 rounded-2xl border border-line bg-surface-sunken/50 p-4">
+        <div className="mb-6 grid grid-cols-3 gap-3 rounded-2xl dark:rounded-lg border border-line bg-surface-sunken/50 p-4">
           <div>
             <div className="text-[9.5px] font-medium uppercase tracking-wider text-ink-faint">Team</div>
             <div className="mt-0.5 font-mono text-[15px] font-bold text-ink">{team}</div>
@@ -225,7 +225,7 @@ function AddAdminModal({ regions, onClose, onCreated }) {
         exit={{ opacity: 0, y: 12, scale: 0.97 }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[420px] rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+        className="w-full max-w-[420px] rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
       >
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-3">

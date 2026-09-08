@@ -72,26 +72,26 @@
   --color-brand-soft: oklch(27% 0.05 195);
   --color-brand-ink: oklch(83% 0.07 195);
 
-  --color-good: oklch(70% 0.16 150);
-  --color-good-soft: oklch(27% 0.06 150);
-  --color-good-ink: oklch(83% 0.09 150);
+  --color-good: oklch(64% 0.13 150);
+  --color-good-soft: oklch(24% 0.045 150);
+  --color-good-ink: oklch(68% 0.13 150);
 
-  --color-warn: oklch(76% 0.15 75);
-  --color-warn-soft: oklch(29% 0.06 75);
-  --color-warn-ink: oklch(85% 0.08 70);
+  --color-warn: oklch(68% 0.12 70);
+  --color-warn-soft: oklch(26% 0.045 75);
+  --color-warn-ink: oklch(72% 0.11 70);
 
-  --color-bad: oklch(68% 0.19 25);
-  --color-bad-soft: oklch(29% 0.07 25);
-  --color-bad-ink: oklch(85% 0.09 25);
+  --color-bad: oklch(60% 0.16 25);
+  --color-bad-soft: oklch(26% 0.05 25);
+  --color-bad-ink: oklch(68% 0.15 25);
 
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 8px 24px -12px oklch(0% 0 0 / 0.5);
-  --shadow-card-hover: 0 2px 4px oklch(0% 0 0 / 0.35), 0 20px 44px -16px oklch(0% 0 0 / 0.6);
-  --shadow-panel: 0 1px 0 oklch(100% 0 0 / 0.06) inset, 0 24px 60px -20px oklch(0% 0 0 / 0.7);
+  --shadow-card: 0 1px 0 oklch(0% 0 0 / 0.4);
+  --shadow-card-hover: 0 1px 0 oklch(0% 0 0 / 0.4);
+  --shadow-panel: 0 1px 0 oklch(100% 0 0 / 0.05) inset, 0 1px 0 oklch(0% 0 0 / 0.5);
 
-  --blob-opacity-1: 0.22;
-  --blob-opacity-2: 0.16;
-  --blob-opacity-3: 0.14;
-  --flow-line-opacity: 0.3;
+  --blob-opacity-1: 0;
+  --blob-opacity-2: 0;
+  --blob-opacity-3: 0;
+  --flow-line-opacity: 0.1;
 }
 
 @layer base {
@@ -146,6 +146,7 @@
     100% { transform: translateY(2200%); opacity: 0; }
   }
   .scan-beam { animation: scan-beam 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+  :root.dark .scan-beam { animation: none; opacity: 0; }
 
   @keyframes field-flash {
     0%, 100% { border-color: var(--color-line); box-shadow: none; background: var(--color-surface); }
@@ -153,6 +154,7 @@
     16%, 90% { border-color: var(--color-good); box-shadow: 0 0 0 3px var(--color-good-soft); }
   }
   .field-flash { animation: field-flash 4.8s ease-in-out infinite; }
+  :root.dark .field-flash { animation: none; border-color: var(--color-line); background: var(--color-surface); box-shadow: none; }
 
   @keyframes aurora-drift-a {
     0%, 100% { transform: translate(0, 0) scale(1); }

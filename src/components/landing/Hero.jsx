@@ -24,7 +24,7 @@ export default function Hero() {
 
   return (
     <section className="relative overflow-hidden border-b border-line/70">
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-brand/[0.10] blur-[130px]" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-brand/[0.10] blur-[130px] dark:opacity-0" />
 
       <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-16 md:pt-24">
         <div className="grid items-center gap-14 md:grid-cols-[1.1fr_0.9fr]">

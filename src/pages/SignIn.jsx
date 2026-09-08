@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck, TriangleAlert, User } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, TriangleAlert, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DocScanVisual from "../components/landing/DocScanVisual";
 import FlowBackground from "../components/landing/FlowBackground";
@@ -35,9 +35,7 @@ export default function SignIn() {
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 pt-7">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy">
-            <ShieldCheck size={16} strokeWidth={1.9} className="text-brand" />
-          </div>
+          <img src="/logo.jpeg" alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
           <span className="font-display text-[15px] font-semibold text-ink">Sentinel</span>
         </Link>
         <ThemeToggle />

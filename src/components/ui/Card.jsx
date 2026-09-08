@@ -7,7 +7,7 @@ export default function Card({ children, className = "", delay = 0, noPad = fals
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -2 }}
-      className={`rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-card-hover)] ${
+      className={`rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-card-hover)] dark:rounded-lg ${
         noPad ? "" : "p-5"
       } ${className}`}
       {...rest}

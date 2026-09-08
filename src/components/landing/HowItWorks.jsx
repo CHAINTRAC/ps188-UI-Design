@@ -2,16 +2,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, FileCheck2, ScanFace, ScanLine, ScanSearch, ShieldAlert } from "lucide-react";
 
+const TONE = {
+  neutral: { soft: "var(--color-surface-sunken)", ink: "var(--color-ink-dim)", line: "var(--color-line)" },
+  good: { soft: "var(--color-good-soft)", ink: "var(--color-good-ink)", line: "var(--color-good)" },
+  bad: { soft: "var(--color-bad-soft)", ink: "var(--color-bad-ink)", line: "var(--color-bad)" },
+  brand: { soft: "var(--color-brand-soft)", ink: "var(--color-brand-ink)", line: "var(--color-brand)" },
+  warn: { soft: "var(--color-warn-soft)", ink: "var(--color-warn-ink)", line: "var(--color-warn)" },
+};
+
 const MODULES = [
   {
     id: "ocr",
     title: "OCR Extraction",
     tag: "TEXT EXTRACTION",
-    badgeColor: "#2a9d90",
-    cardBg: "linear-gradient(145deg, #0c2d2a 0%, #071a18 100%)",
-    bgGlow: "rgba(42, 157, 144, 0.4)",
-    ambientBg:
-      "radial-gradient(ellipse at 70% 50%, rgba(42, 157, 144, 0.22) 0%, rgba(20, 100, 90, 0.12) 45%, transparent 75%)",
+    tone: "neutral",
     description:
       "Reads passports, visas, Aadhaar, licenses & permits — pulls every field: name, number, DOB, nationality, expiry.",
     codeSnippet: "MRZ: Z1234567<4IND8501011M3001017<<<< → parsed",
@@ -22,11 +26,7 @@ const MODULES = [
     id: "validation",
     title: "Document Validation",
     tag: "CHECKSUM PROOF",
-    badgeColor: "#1a9e63",
-    cardBg: "linear-gradient(145deg, #064e3b 0%, #022c22 100%)",
-    bgGlow: "rgba(26, 158, 99, 0.4)",
-    ambientBg:
-      "radial-gradient(ellipse at 70% 50%, rgba(26, 158, 99, 0.22) 0%, rgba(0, 120, 75, 0.12) 45%, transparent 75%)",
+    tone: "good",
     description:
       "Checks extracted data against issuing standards — ICAO 9303 checksums, Verhoeff validation, MRZ cross-match.",
     codeSnippet: "ICAO 9303 checkdigit (7-3-1 weighted) → PASS",
@@ -37,11 +37,7 @@ const MODULES = [
     id: "tampering",
     title: "Tampering Detection",
     tag: "FORENSIC ANALYSIS",
-    badgeColor: "#dc4444",
-    cardBg: "linear-gradient(145deg, #7f1d1d 0%, #450a0a 100%)",
-    bgGlow: "rgba(220, 68, 68, 0.4)",
-    ambientBg:
-      "radial-gradient(ellipse at 70% 50%, rgba(220, 68, 68, 0.22) 0%, rgba(183, 28, 28, 0.12) 45%, transparent 75%)",
+    tone: "bad",
     description:
       "CNN + Error Level Analysis catch photo swaps, text edits, forged stamps, and metadata inconsistencies.",
     codeSnippet: "ELA variance: 118 (threshold 350) → CLEAN",
@@ -52,11 +48,7 @@ const MODULES = [
     id: "face",
     title: "Face Verification",
     tag: "BIOMETRIC MATCH",
-    badgeColor: "#e08a1e",
-    cardBg: "linear-gradient(145deg, #7c2d12 0%, #451a03 100%)",
-    bgGlow: "rgba(224, 138, 30, 0.4)",
-    ambientBg:
-      "radial-gradient(ellipse at 70% 50%, rgba(224, 138, 30, 0.22) 0%, rgba(191, 84, 12, 0.12) 45%, transparent 75%)",
+    tone: "brand",
     description:
       "Matches the document photo against a live capture to confirm the presenter is the document's owner.",
     codeSnippet: "Face similarity: 96.2% (threshold 85%) → MATCH",
@@ -67,11 +59,7 @@ const MODULES = [
     id: "blacklist",
     title: "Blacklist Check",
     tag: "REGISTRY LOOKUP",
-    badgeColor: "#8b5cf6",
-    cardBg: "linear-gradient(145deg, #3b2166 0%, #1c0f38 100%)",
-    bgGlow: "rgba(139, 92, 246, 0.4)",
-    ambientBg:
-      "radial-gradient(ellipse at 70% 50%, rgba(139, 92, 246, 0.22) 0%, rgba(91, 51, 168, 0.12) 45%, transparent 75%)",
+    tone: "warn",
     description:
       "Cross-checks the document number against Sentinel's own registry — reported stolen, previously flagged, or under active watch.",
     codeSnippet: "doc_number Z1234567 → NOT_FOUND (clean)",
@@ -167,6 +155,7 @@ export default function HowItWorks() {
   );
 
   const active = MODULES[activeIndex];
+  const activeTone = TONE[active.tone];
 
   return (
     <section
@@ -174,25 +163,20 @@ export default function HowItWorks() {
       id="how-it-works"
       className="relative w-full select-none overflow-hidden border-y border-line/70 bg-surface-sunken/50 py-24"
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-90 transition-all duration-700 ease-out"
-        style={{ background: active.ambientBg }}
-      />
-
       <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-6 lg:grid-cols-[1.1fr_1.3fr]">
         {/* left: headline + stats + nav */}
         <div className="flex flex-col items-start text-left">
           <div
-            className="mb-4 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider shadow-sm transition-all duration-500"
-            style={{ backgroundColor: `${active.badgeColor}18`, color: active.badgeColor, borderColor: `${active.badgeColor}50` }}
+            className="mb-4 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors duration-500"
+            style={{ backgroundColor: activeTone.soft, color: activeTone.ink, borderColor: activeTone.line }}
           >
-            <span className="h-2 w-2 animate-ping rounded-full" style={{ backgroundColor: active.badgeColor }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: activeTone.ink }} />
             {active.tag}
           </div>
 
           <h2 className="mb-4 font-display text-[32px] font-bold leading-[1.15] tracking-tight text-ink md:text-[38px]">
             Evidence powered by{" "}
-            <span className="transition-colors duration-500" style={{ color: active.badgeColor }}>
+            <span className="transition-colors duration-500" style={{ color: activeTone.ink }}>
               real forensics
             </span>
             .
@@ -203,7 +187,7 @@ export default function HowItWorks() {
             document is checked against text, structural, forensic, and biometric evidence.
           </p>
 
-          <div className="mb-8 grid w-full max-w-md grid-cols-3 gap-4 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors duration-500">
+          <div className="mb-8 grid w-full max-w-md grid-cols-3 gap-4 rounded-lg border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors duration-500">
             <div>
               <div className="text-[9.5px] font-bold uppercase tracking-wider text-ink-faint">Processing</div>
               <div className="mt-0.5 font-mono text-[13px] font-extrabold text-ink">{active.stats.speed}</div>
@@ -222,7 +206,7 @@ export default function HowItWorks() {
             <button
               onClick={prevCard}
               aria-label="Previous module"
-              className="rounded-full border border-line bg-surface p-3 text-ink shadow-sm transition-all hover:scale-105 hover:border-brand active:scale-95"
+              className="rounded-full border border-line bg-surface p-3 text-ink transition-colors hover:border-brand"
             >
               <ChevronLeft size={20} />
             </button>
@@ -236,7 +220,7 @@ export default function HowItWorks() {
                   className={`h-2.5 rounded-full transition-all duration-300 ${
                     idx === activeIndex ? "w-8" : "w-2.5 bg-ink-faint opacity-40 hover:opacity-80"
                   }`}
-                  style={{ backgroundColor: idx === activeIndex ? active.badgeColor : undefined }}
+                  style={{ backgroundColor: idx === activeIndex ? TONE[m.tone].line : undefined }}
                 />
               ))}
             </div>
@@ -244,7 +228,7 @@ export default function HowItWorks() {
             <button
               onClick={nextCard}
               aria-label="Next module"
-              className="rounded-full border border-line bg-surface p-3 text-ink shadow-sm transition-all hover:scale-105 hover:border-brand active:scale-95"
+              className="rounded-full border border-line bg-surface p-3 text-ink transition-colors hover:border-brand"
             >
               <ChevronRight size={20} />
             </button>
@@ -269,6 +253,7 @@ export default function HowItWorks() {
             if (Math.abs(diff) > 2) return null;
             const isActive = diff === 0;
             const Icon = card.icon;
+            const tone = TONE[card.tone];
 
             const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
             const rotateY = diff * (isMobile ? -12 : -18);
@@ -281,11 +266,12 @@ export default function HowItWorks() {
               <motion.div
                 key={card.id}
                 onClick={() => setActiveIndex(idx)}
-                className="absolute top-0 flex h-[375px] w-[270px] transform-gpu select-none flex-col justify-between rounded-3xl border p-5 transition-all duration-500 ease-out sm:h-[395px] sm:w-[340px] sm:p-6"
+                className="absolute top-0 flex h-[375px] w-[270px] transform-gpu select-none flex-col justify-between rounded-lg border bg-surface p-5 transition-colors duration-500 ease-out sm:h-[395px] sm:w-[340px] sm:p-6"
                 style={{
-                  background: card.cardBg,
-                  borderColor: isActive ? card.badgeColor : "rgba(255,255,255,0.12)",
-                  boxShadow: isActive ? `0 24px 60px ${card.bgGlow}, 0 0 0 1px ${card.badgeColor}` : "0 12px 30px rgba(0,0,0,0.6)",
+                  borderColor: isActive ? tone.line : "var(--color-line)",
+                  boxShadow: isActive
+                    ? `0 20px 50px color-mix(in oklch, ${tone.line} 32%, transparent), 0 0 0 1px ${tone.line}`
+                    : "0 12px 30px oklch(0% 0 0 / 0.4)",
                   zIndex: 20 - Math.abs(diff),
                 }}
                 animate={{
@@ -297,28 +283,28 @@ export default function HowItWorks() {
                 <div>
                   <div className="mb-4 flex items-center justify-between">
                     <span
-                      className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider shadow-sm"
-                      style={{ backgroundColor: `${card.badgeColor}25`, color: card.badgeColor, border: `1px solid ${card.badgeColor}60` }}
+                      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider"
+                      style={{ backgroundColor: tone.soft, color: tone.ink, borderColor: tone.line }}
                     >
                       <Icon size={12} />
                       {card.tag}
                     </span>
-                    <span className="font-mono text-xs font-bold text-white/70">0{idx + 1}</span>
+                    <span className="font-mono text-xs font-bold text-ink-faint">0{idx + 1}</span>
                   </div>
 
-                  <h3 className="mb-2.5 font-display text-xl font-extrabold leading-snug tracking-tight text-white drop-shadow-md">
+                  <h3 className="mb-2.5 font-display text-xl font-extrabold leading-snug tracking-tight text-ink">
                     {card.title}
                   </h3>
-                  <p className="text-xs font-medium leading-relaxed text-white/90">{card.description}</p>
+                  <p className="text-xs font-medium leading-relaxed text-ink-dim">{card.description}</p>
                 </div>
 
                 <div>
-                  <div className="mb-4 break-all rounded-xl border border-white/20 bg-black/80 p-3.5 font-mono text-[11px] font-semibold text-white shadow-inner">
+                  <div className="mb-4 break-all rounded-lg border border-line bg-surface-sunken p-3.5 font-mono text-[11px] font-semibold text-ink">
                     {card.codeSnippet}
                   </div>
-                  <div className="flex items-center justify-between border-t border-white/20 pt-2.5 text-xs font-bold text-white">
+                  <div className="flex items-center justify-between border-t border-line pt-2.5 text-xs font-bold text-ink">
                     <span>Inspect signal</span>
-                    <ArrowRight size={15} style={{ color: card.badgeColor }} />
+                    <ArrowRight size={15} style={{ color: tone.ink }} />
                   </div>
                 </div>
               </motion.div>

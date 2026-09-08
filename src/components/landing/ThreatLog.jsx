@@ -50,7 +50,7 @@ export default function ThreatLog() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="mt-11 w-full max-w-[920px] overflow-hidden rounded-2xl border border-line bg-surface-sunken shadow-[var(--shadow-panel)]"
+          className="mt-11 w-full max-w-[920px] overflow-hidden rounded-2xl dark:rounded-lg border border-line bg-surface-sunken shadow-[var(--shadow-panel)]"
         >
           <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-3">
             <span className="h-2.5 w-2.5 rounded-full bg-bad" />

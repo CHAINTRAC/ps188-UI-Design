@@ -11,8 +11,8 @@ const IMPACT = [
 export default function ImpactStrip() {
   return (
     <section id="impact" className="relative overflow-hidden border-y border-line/70 bg-surface-sunken/60 py-20">
-      <div className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-brand/10 blur-[130px]" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-[380px] w-[380px] rounded-full bg-good/[0.06] blur-[120px]" />
+      <div className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-brand/10 blur-[130px] dark:opacity-0" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-[380px] w-[380px] rounded-full bg-good/[0.06] blur-[120px] dark:opacity-0" />
 
       <div className="relative mx-auto max-w-6xl px-6">
         <motion.div

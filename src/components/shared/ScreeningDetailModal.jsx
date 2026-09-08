@@ -42,7 +42,7 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[90vh] w-full max-w-[900px] overflow-y-auto rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+            className="max-h-[90vh] w-full max-w-[900px] overflow-y-auto rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -63,7 +63,7 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">
               {/* left column */}
               <div className="flex flex-col gap-5">
-                <div className="overflow-hidden rounded-2xl border border-line bg-surface-sunken">
+                <div className="overflow-hidden rounded-2xl dark:rounded-lg border border-line bg-surface-sunken">
                   {imageUrl ? (
                     <img src={imageUrl} alt="Scanned document" className="max-h-[220px] w-full object-cover" />
                   ) : (
@@ -73,7 +73,7 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-line p-5">
+                <div className="rounded-2xl dark:rounded-lg border border-line p-5">
                   <span className="mb-3 block text-[13px] font-semibold">Extracted Fields</span>
                   <div className="flex flex-col">
                     {(item.engine?.extracted_fields ?? []).map((f, i, arr) => (
@@ -99,7 +99,7 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
 
               {/* right column */}
               <div className="flex flex-col gap-5">
-                <div className="rounded-2xl border border-line bg-surface-sunken/50 p-5">
+                <div className="rounded-2xl dark:rounded-lg border border-line bg-surface-sunken/50 p-5">
                   <span className="mb-3.5 block text-[13px] font-semibold">Risk Assessment</span>
                   <div className="flex items-center gap-5">
                     <RiskGauge score={item.risk_score} tone={tone} size={90} />
@@ -123,7 +123,7 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                 </div>
 
                 {item.flags?.includes("blacklist_hit") && (
-                  <div className="flex items-start gap-2.5 rounded-2xl border border-bad/30 bg-bad-soft p-5">
+                  <div className="flex items-start gap-2.5 rounded-2xl dark:rounded-lg border border-bad/30 bg-bad-soft p-5">
                     <ShieldAlert size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-bad-ink" />
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[13px] font-semibold text-bad-ink">Blacklist match</span>

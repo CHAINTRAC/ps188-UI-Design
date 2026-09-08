@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, Menu, ShieldCheck, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../ui/ThemeToggle";
 import { useMe, useLogout } from "../../features/auth/hooks";
@@ -36,15 +36,13 @@ export default function HeaderShell({ role }) {
           className="absolute -right-[10%] bottom-[-20%] h-[520px] w-[520px] rounded-full blur-[130px]"
           style={{ background: "var(--color-good)", opacity: "var(--blob-opacity-2)" }}
         />
-        <div className="bg-dot-grid absolute inset-0 opacity-70" />
+        <div className="bg-dot-grid absolute inset-0 opacity-70 dark:opacity-0" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md dark:bg-surface dark:backdrop-blur-none">
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6 lg:gap-6">
           <Link to="/" className="flex items-center gap-2.5 justify-self-start">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy">
-              <ShieldCheck size={16} strokeWidth={1.9} className="text-brand" />
-            </div>
+            <img src="/logo.jpeg" alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
             <span className="font-display text-[15px] font-semibold text-ink">Sentinel</span>
           </Link>
 

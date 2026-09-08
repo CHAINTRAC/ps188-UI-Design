@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../ui/ThemeToggle";
 
@@ -27,14 +26,11 @@ export default function Nav() {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="sticky top-0 z-40 border-b border-line/70 bg-canvas/80 backdrop-blur-md"
+      className="sticky top-0 z-40 border-b border-line/70 bg-canvas/80 backdrop-blur-md dark:bg-canvas dark:backdrop-blur-none"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-2.5">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-navy">
-            <span className="absolute inset-0 rounded-lg bg-brand/30 blur-md" />
-            <ShieldCheck size={16} strokeWidth={1.9} className="relative text-brand" />
-          </div>
+          <img src="/logo.jpeg" alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
           <span className="font-display text-[15px] font-semibold text-ink">Sentinel</span>
         </div>
 

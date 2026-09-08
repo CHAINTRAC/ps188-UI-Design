@@ -34,7 +34,7 @@ export default function DocScanVisual() {
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative overflow-hidden rounded-2xl border border-line bg-surface p-6 shadow-[var(--shadow-panel)]"
+        className="relative overflow-hidden rounded-2xl dark:rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-panel)]"
       >
         <span className="scan-beam pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-brand/30 via-brand/12 to-transparent" />
 

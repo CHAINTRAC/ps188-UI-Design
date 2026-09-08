@@ -64,7 +64,7 @@ export default function GetStarted() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ delay: i * 0.08, duration: 0.45 }}
-                className="rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]"
+                className="rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)] dark:rounded-lg"
               >
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${ACCENT_ICON_BG[c.accent]}`}>
                   <c.Icon size={19} strokeWidth={1.75} className={ACCENT_TEXT[c.accent]} />
