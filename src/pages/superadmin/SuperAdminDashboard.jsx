@@ -31,6 +31,8 @@ export default function SuperAdminDashboard() {
 
   const s = summary ?? {};
   const totals = s.totals ?? {};
+  // checkpoint_activity[].id is the checkpoint *code* (screenings denormalise the
+  // code, not the ObjectID), so it keys straight off CheckpointView.code below.
   const todayByCheckpoint = Object.fromEntries((s.checkpoint_activity ?? []).map((a) => [a.id, a.today]));
   const decisionRate = s.screenings_total ? ((s.decided_total ?? 0) / s.screenings_total) * 100 : 0;
 

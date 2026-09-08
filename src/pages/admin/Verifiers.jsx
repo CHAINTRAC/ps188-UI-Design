@@ -26,12 +26,15 @@ function formatDate(iso) {
 }
 
 function VerifierDetail({ verifier, checkpoints, onClose, onOpenCase }) {
-  const { data: screenings = [], isLoading } = useScreenings({ checkpointId: verifier.checkpoint_id });
-  const history = screenings.filter((s) => s.officer_id === verifier.id);
+  const [checkpointId, setCheckpointId] = useState(verifier.checkpoint_id);
   const resetPassword = useResetUserPassword();
   const updateUser = useUpdateUser();
-  const [checkpointId, setCheckpointId] = useState(verifier.checkpoint_id);
   const disabled = verifier.status !== "active";
+
+  // "Recent Screenings" tracks whichever checkpoint is selected in the drawer —
+  // it follows a reassignment instead of staying pinned to the original.
+  const { data: screenings = [], isLoading } = useScreenings({ checkpointId });
+  const history = screenings.filter((s) => s.officer_id === verifier.id);
 
   const reassign = (code) => {
     setCheckpointId(code);
