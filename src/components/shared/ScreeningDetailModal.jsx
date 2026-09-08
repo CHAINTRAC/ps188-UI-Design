@@ -1,12 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ShieldAlert, TriangleAlert, User, X } from "lucide-react";
+import { Check, ShieldAlert, TriangleAlert, User, UserCheck, UserX, X } from "lucide-react";
 import Badge from "../ui/Badge";
 import RiskGauge from "../ui/RiskGauge";
 import { useScreening, useScreeningImage } from "../../features/screenings/hooks";
 import { timeAgo } from "../../lib/format";
 
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
-const confBadge = (c) => (c >= 0.9 ? "good" : c >= 0.75 ? "warn" : "bad");
 const BAND_TONE = { GENUINE: "good", SUSPICIOUS: "warn", FAKE: "bad" };
 const DECISION_ICON = { accept: Check, escalate: TriangleAlert, reject: X };
 const DECISION_STYLE = {
@@ -79,15 +78,12 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                     {(item.engine?.extracted_fields ?? []).map((f, i, arr) => (
                       <div
                         key={f.label}
-                        className={`grid grid-cols-[110px_1fr_46px] items-center gap-2 py-2 ${
+                        className={`grid grid-cols-[110px_1fr] items-center gap-2 py-2 ${
                           i !== arr.length - 1 ? "border-b border-line-soft" : ""
                         }`}
                       >
                         <span className="text-[11.5px] text-ink-dim">{f.label}</span>
                         <span className="font-mono text-[12.5px]">{f.value}</span>
-                        <Badge variant={confBadge(f.confidence)} className="justify-center">
-                          {Math.round(f.confidence * 100)}%
-                        </Badge>
                       </div>
                     ))}
                     {(item.engine?.extracted_fields ?? []).length === 0 && (
@@ -128,11 +124,40 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[13px] font-semibold text-bad-ink">Blacklist match</span>
                       {(item.blacklist_matches ?? []).map((m, i) => (
-                        <span key={i} className="text-[11.5px] leading-relaxed text-bad-ink">
-                          {m.reason}
-                          {m.source ? ` · ${m.source}` : ""}
-                        </span>
+                        <div key={i} className="flex flex-col gap-0.5">
+                          {(m.doc_number || m.name) && (
+                            <span className="font-mono text-[12px] font-semibold text-bad-ink">
+                              {m.doc_number || m.name}
+                            </span>
+                          )}
+                          <span className="text-[11.5px] leading-relaxed text-bad-ink">
+                            {m.reason}
+                            {m.source ? ` · ${m.source}` : ""}
+                          </span>
+                        </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {item.face_match && (
+                  <div
+                    className={`flex items-start gap-2.5 rounded-2xl dark:rounded-lg border p-5 ${
+                      item.face_match.is_match ? "border-good/30 bg-good-soft" : "border-bad/30 bg-bad-soft"
+                    }`}
+                  >
+                    {item.face_match.is_match ? (
+                      <UserCheck size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-good-ink" />
+                    ) : (
+                      <UserX size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-bad-ink" />
+                    )}
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-[13px] font-semibold ${item.face_match.is_match ? "text-good-ink" : "text-bad-ink"}`}>
+                        Face match — {Math.round(item.face_match.similarity_score * 100)}% similarity
+                      </span>
+                      <span className={`text-[11.5px] leading-relaxed ${item.face_match.is_match ? "text-good-ink" : "text-bad-ink"}`}>
+                        {item.face_match.message}
+                      </span>
                     </div>
                   </div>
                 )}

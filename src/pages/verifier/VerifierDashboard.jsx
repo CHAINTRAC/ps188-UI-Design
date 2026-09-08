@@ -12,6 +12,9 @@ import {
   ShieldCheck,
   TriangleAlert,
   Upload,
+  User,
+  UserCheck,
+  UserX,
   X,
 } from "lucide-react";
 import Topbar from "../../components/layout/Topbar";
@@ -26,7 +29,6 @@ import { useDashboardSummary } from "../../features/dashboard/hooks";
 
 const STAGE_ICONS = { ocr: ScanLine, checksum: FileCheck2, tamper: ScanSearch, face: ScanFace, blacklist: ShieldAlert };
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
-const confBadge = (c) => (c >= 0.9 ? "good" : c >= 0.75 ? "warn" : "bad");
 const BAND_TONE = { GENUINE: "good", SUSPICIOUS: "warn", FAKE: "bad" };
 
 // The screening model classifies the document type itself — the officer no
@@ -47,6 +49,7 @@ async function dataUrlToFile(dataUrl, filename) {
 
 export default function VerifierDashboard() {
   const fileInputRef = useRef(null);
+  const selfieInputRef = useRef(null);
   const { data: me } = useMe();
   const { data: summary } = useDashboardSummary();
   const submitMutation = useSubmitScreening();
@@ -54,17 +57,14 @@ export default function VerifierDashboard() {
 
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [selfieFile, setSelfieFile] = useState(null);
+  const [selfiePreviewUrl, setSelfiePreviewUrl] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | ready | processing | done
   const [stageIndex, setStageIndex] = useState(-1);
   const [result, setResult] = useState(null);
   const [reason, setReason] = useState("");
   const [showDocCapture, setShowDocCapture] = useState(false);
-
-  const [docNumber, setDocNumber] = useState("");
-  const [holderName, setHolderName] = useState("");
-  const [dob, setDob] = useState("");
-  const [nationality, setNationality] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  const [showSelfieCapture, setShowSelfieCapture] = useState(false);
 
   useEffect(() => {
     if (!submitMutation.isPending) return;
@@ -77,17 +77,15 @@ export default function VerifierDashboard() {
 
   const reset = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (selfiePreviewUrl) URL.revokeObjectURL(selfiePreviewUrl);
     setFile(null);
     setPreviewUrl(null);
+    setSelfieFile(null);
+    setSelfiePreviewUrl(null);
     setStatus("idle");
     setStageIndex(-1);
     setResult(null);
     setReason("");
-    setDocNumber("");
-    setHolderName("");
-    setDob("");
-    setNationality("");
-    setExpiryDate("");
     submitMutation.reset();
     decideMutation.reset();
   };
@@ -101,10 +99,22 @@ export default function VerifierDashboard() {
     setResult(null);
   };
 
+  const setSelfie = (nextFile, url) => {
+    if (selfiePreviewUrl) URL.revokeObjectURL(selfiePreviewUrl);
+    setSelfieFile(nextFile);
+    setSelfiePreviewUrl(url);
+  };
+
   const handleFileChange = (e) => {
     const picked = e.target.files?.[0];
     if (!picked) return;
     beginDocument(picked, URL.createObjectURL(picked));
+  };
+
+  const handleSelfieFileChange = (e) => {
+    const picked = e.target.files?.[0];
+    if (!picked) return;
+    setSelfie(picked, URL.createObjectURL(picked));
   };
 
   const handleDocCapture = async (dataUrl) => {
@@ -113,17 +123,19 @@ export default function VerifierDashboard() {
     setShowDocCapture(false);
   };
 
+  const handleSelfieCapture = async (dataUrl) => {
+    const captured = await dataUrlToFile(dataUrl, "selfie.jpg");
+    setSelfie(captured, dataUrl);
+    setShowSelfieCapture(false);
+  };
+
   const runScreening = () => {
     if (!file) return;
     setStatus("processing");
     const formData = new FormData();
     formData.append("document", file);
     // doc_type is intentionally omitted — the screening model classifies it.
-    if (docNumber) formData.append("doc_number", docNumber);
-    if (holderName) formData.append("holder_name", holderName);
-    if (dob) formData.append("dob", dob);
-    if (nationality) formData.append("nationality", nationality);
-    if (expiryDate) formData.append("expiry_date", expiryDate);
+    if (selfieFile) formData.append("selfie", selfieFile);
 
     submitMutation.mutate(formData, {
       onSuccess: (view) => {
@@ -205,55 +217,49 @@ export default function VerifierDashboard() {
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
             {status === "ready" && (
-              <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-                <p className="col-span-2 -mt-0.5 text-[11px] text-ink-faint">
-                  The model identifies the document type automatically. Fields below are optional and only sharpen the
-                  blacklist and expiry checks.
-                </p>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Document no. (optional)</span>
-                  <input
-                    value={docNumber}
-                    onChange={(e) => setDocNumber(e.target.value)}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Holder name (optional)</span>
-                  <input
-                    value={holderName}
-                    onChange={(e) => setHolderName(e.target.value)}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Date of birth (optional)</span>
-                  <input
-                    type="date"
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Nationality (optional)</span>
-                  <input
-                    value={nationality}
-                    onChange={(e) => setNationality(e.target.value.toUpperCase())}
-                    placeholder="ISO-3, e.g. IND"
-                    maxLength={3}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  />
-                </label>
-                <label className="col-span-2 flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Expiry date (optional)</span>
-                  <input
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    className="rounded-lg border border-line bg-surface-sunken/50 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
-                  />
-                </label>
+              <div className="mt-3.5 rounded-xl border border-line p-3.5">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <span className="text-[12.5px] font-semibold text-ink">Person Photo</span>
+                  <span className="text-[10.5px] text-ink-faint">Matched against the document photo</span>
+                </div>
+                {selfiePreviewUrl ? (
+                  <div className="flex items-center gap-3">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-line">
+                      <img src={selfiePreviewUrl} alt="Person" className="h-full w-full object-cover" />
+                    </div>
+                    <button
+                      onClick={() => setSelfie(null, null)}
+                      className="flex items-center gap-1.5 text-[11.5px] font-medium text-ink-faint hover:text-ink-dim"
+                    >
+                      <RotateCcw size={12} strokeWidth={1.75} />
+                      Retake
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    <button
+                      onClick={() => selfieInputRef.current?.click()}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-line py-3 text-[12px] font-medium text-ink-dim transition-colors hover:border-brand hover:bg-surface-sunken/50"
+                    >
+                      <Upload size={14} strokeWidth={1.75} />
+                      Upload photo
+                    </button>
+                    <button
+                      onClick={() => setShowSelfieCapture(true)}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-line py-3 text-[12px] font-medium text-ink-dim transition-colors hover:border-brand hover:bg-surface-sunken/50"
+                    >
+                      <User size={14} strokeWidth={1.75} />
+                      Capture photo
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={selfieInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSelfieFileChange}
+                  className="hidden"
+                />
               </div>
             )}
 
@@ -331,15 +337,12 @@ export default function VerifierDashboard() {
                 {extractedFields.map((f, i) => (
                   <div
                     key={f.label}
-                    className={`grid grid-cols-[130px_1fr_54px] items-center gap-2.5 py-2.5 ${
+                    className={`grid grid-cols-[130px_1fr] items-center gap-2.5 py-2.5 ${
                       i !== extractedFields.length - 1 ? "border-b border-line-soft" : ""
                     }`}
                   >
                     <span className="text-[12px] text-ink-dim">{f.label}</span>
                     <span className="font-mono text-[13px]">{f.value}</span>
-                    <Badge variant={confBadge(f.confidence)} className="justify-center">
-                      {Math.round(f.confidence * 100)}%
-                    </Badge>
                   </div>
                 ))}
                 {extractedFields.length === 0 && (
@@ -415,6 +418,44 @@ export default function VerifierDashboard() {
                 </div>
               </Card>
 
+              {result.flags?.includes("blacklist_hit") && (
+                <Card delay={0.06} className="!border-bad/30 !bg-bad-soft">
+                  <div className="flex items-start gap-2.5">
+                    <ShieldAlert size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-bad-ink" />
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[13px] font-semibold text-bad-ink">Blacklist match</span>
+                      {(result.blacklist_matches ?? []).map((m, i) => (
+                        <div key={i} className="flex flex-col gap-0.5">
+                          {(m.doc_number || m.name) && (
+                            <span className="font-mono text-[12px] font-semibold text-bad-ink">
+                              {m.doc_number || m.name}
+                            </span>
+                          )}
+                          <span className="text-[11.5px] leading-relaxed text-bad-ink">
+                            {m.reason}
+                            {m.source ? ` · ${m.source}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {result.face_match && !result.face_match.is_match && (
+                <Card delay={0.07} className="!border-bad/30 !bg-bad-soft">
+                  <div className="flex items-start gap-2.5">
+                    <UserX size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-bad-ink" />
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[13px] font-semibold text-bad-ink">
+                        Face match failed — {Math.round(result.face_match.similarity_score * 100)}% similarity
+                      </span>
+                      <span className="text-[11.5px] leading-relaxed text-bad-ink">{result.face_match.message}</span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               <Card delay={0.08} noPad>
                 <span className="mb-1 block px-5 pt-5 text-[13.5px] font-semibold">Evidence Breakdown</span>
                 <p className="px-5 pb-1 text-[11px] text-ink-faint">Explainability signals from the screening engine.</p>
@@ -429,18 +470,24 @@ export default function VerifierDashboard() {
                     <div className="text-[12px] text-ink-faint">No explainability data returned.</div>
                   )}
 
-                  <div className="mt-2 flex items-start gap-2.5 border-t border-line-soft pt-3">
-                    {result.flags?.includes("blacklist_hit") ? (
-                      <ShieldAlert size={14} strokeWidth={1.75} className="mt-0.5 shrink-0 text-bad-ink" />
-                    ) : (
+                  {!result.flags?.includes("blacklist_hit") && (
+                    <div className="mt-2 flex items-start gap-2.5 border-t border-line-soft pt-3">
                       <ShieldCheck size={14} strokeWidth={1.75} className="mt-0.5 shrink-0 text-good-ink" />
-                    )}
-                    <span className="text-[12px] leading-relaxed text-ink-dim">
-                      {result.flags?.includes("blacklist_hit")
-                        ? result.blacklist_matches?.[0]?.reason ?? "Matches an active blacklist entry"
-                        : "No match against the active blacklist registry"}
-                    </span>
-                  </div>
+                      <span className="text-[12px] leading-relaxed text-ink-dim">
+                        No match against the active blacklist registry
+                      </span>
+                    </div>
+                  )}
+
+                  {result.face_match?.is_match && (
+                    <div className="flex items-start gap-2.5 border-t border-line-soft pt-3">
+                      <UserCheck size={14} strokeWidth={1.75} className="mt-0.5 shrink-0 text-good-ink" />
+                      <span className="text-[12px] leading-relaxed text-ink-dim">
+                        Face match — {Math.round(result.face_match.similarity_score * 100)}% similarity ·{" "}
+                        {result.face_match.message}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -523,6 +570,17 @@ export default function VerifierDashboard() {
             mirror={false}
             onClose={() => setShowDocCapture(false)}
             onCapture={handleDocCapture}
+          />
+        )}
+        {showSelfieCapture && (
+          <CameraCaptureModal
+            title="Person Photo"
+            subtitle="Center the traveler's face in frame."
+            facingMode="user"
+            aspect="aspect-square"
+            mirror
+            onClose={() => setShowSelfieCapture(false)}
+            onCapture={handleSelfieCapture}
           />
         )}
       </AnimatePresence>
