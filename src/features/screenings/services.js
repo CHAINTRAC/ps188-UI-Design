@@ -37,3 +37,8 @@ export async function fetchScreeningImageBlobUrl(id) {
   const res = await api.get(`/screenings/${id}/image`, { responseType: "blob" });
   return URL.createObjectURL(res.data);
 }
+
+export async function fetchScreeningSelfieBlobUrl(id) {
+  const res = await api.get(`/screenings/${id}/selfie`, { responseType: "blob" });
+  return URL.createObjectURL(res.data);
+}

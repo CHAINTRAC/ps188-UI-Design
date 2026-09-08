@@ -1,3 +1,25 @@
+// Known field names the OCR service (passport-model/ocr_extractor.py) can
+// return in parsed_fields. Anything else falls back to snake_case -> Title
+// Case, so a field the model adds later still reads reasonably.
+const EXTRACTED_FIELD_LABELS = {
+  dob: "Date of Birth",
+  document_number: "Document Number",
+  document_number_type: "Document Type",
+  document_number_valid: "Number Valid",
+  expiry_date: "Expiry Date",
+  gender: "Gender",
+  given_name: "Given Name",
+  surname: "Surname",
+};
+
+export function fieldLabel(key) {
+  if (EXTRACTED_FIELD_LABELS[key]) return EXTRACTED_FIELD_LABELS[key];
+  return key
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function initialsFor(name) {
   if (!name) return "";
   return name

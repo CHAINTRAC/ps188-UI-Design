@@ -23,9 +23,10 @@ import Badge from "../../components/ui/Badge";
 import RiskGauge from "../../components/ui/RiskGauge";
 import CameraCaptureModal from "../../components/verifier/CameraCaptureModal";
 import { STAGES } from "../../data/verifierScenarios";
-import { useSubmitScreening, useDecideScreening } from "../../features/screenings/hooks";
+import { useSubmitScreening, useDecideScreening, useScreeningSelfie } from "../../features/screenings/hooks";
 import { useMe } from "../../features/auth/hooks";
 import { useDashboardSummary } from "../../features/dashboard/hooks";
+import { fieldLabel } from "../../lib/format";
 
 const STAGE_ICONS = { ocr: ScanLine, checksum: FileCheck2, tamper: ScanSearch, face: ScanFace, blacklist: ShieldAlert };
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
@@ -159,6 +160,7 @@ export default function VerifierDashboard() {
   const evidence = result?.engine?.evidence ?? [];
   const extractedFields = result?.engine?.extracted_fields ?? [];
   const decision = result?.officer_decision;
+  const persistedSelfieUrl = useScreeningSelfie(result?.selfie_url ? result.id : null);
 
   return (
     <>
@@ -216,24 +218,26 @@ export default function VerifierDashboard() {
 
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
-            {status === "ready" && (
+            {(status === "ready" || (status === "processing" && selfiePreviewUrl)) && (
               <div className="mt-3.5 rounded-xl border border-line p-3.5">
                 <div className="mb-2.5 flex items-center justify-between">
                   <span className="text-[12.5px] font-semibold text-ink">Person Photo</span>
                   <span className="text-[10.5px] text-ink-faint">Matched against the document photo</span>
                 </div>
                 {selfiePreviewUrl ? (
-                  <div className="flex items-center gap-3">
-                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-line">
+                  <div className="flex items-center gap-4">
+                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-line">
                       <img src={selfiePreviewUrl} alt="Person" className="h-full w-full object-cover" />
                     </div>
-                    <button
-                      onClick={() => setSelfie(null, null)}
-                      className="flex items-center gap-1.5 text-[11.5px] font-medium text-ink-faint hover:text-ink-dim"
-                    >
-                      <RotateCcw size={12} strokeWidth={1.75} />
-                      Retake
-                    </button>
+                    {status === "ready" && (
+                      <button
+                        onClick={() => setSelfie(null, null)}
+                        className="flex items-center gap-1.5 text-[11.5px] font-medium text-ink-faint hover:text-ink-dim"
+                      >
+                        <RotateCcw size={12} strokeWidth={1.75} />
+                        Retake
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -341,8 +345,8 @@ export default function VerifierDashboard() {
                       i !== extractedFields.length - 1 ? "border-b border-line-soft" : ""
                     }`}
                   >
-                    <span className="text-[12px] text-ink-dim">{f.label}</span>
-                    <span className="font-mono text-[13px]">{f.value}</span>
+                    <span className="min-w-0 break-words text-[12px] text-ink-dim">{fieldLabel(f.label)}</span>
+                    <span className="min-w-0 break-all font-mono text-[13px]">{f.value}</span>
                   </div>
                 ))}
                 {extractedFields.length === 0 && (
@@ -417,6 +421,24 @@ export default function VerifierDashboard() {
                   </div>
                 </div>
               </Card>
+
+              {result.selfie_url && (
+                <Card delay={0.05}>
+                  <span className="mb-3 block text-[13.5px] font-semibold">Live Capture</span>
+                  <div className="flex items-center gap-4">
+                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-line bg-surface-sunken">
+                      {persistedSelfieUrl && (
+                        <img src={persistedSelfieUrl} alt="Live capture" className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                    {result.face_match && (
+                      <span className="text-[12px] text-ink-dim">
+                        {Math.round(result.face_match.similarity_score * 100)}% similarity to document photo
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              )}
 
               {result.flags?.includes("blacklist_hit") && (
                 <Card delay={0.06} className="!border-bad/30 !bg-bad-soft">

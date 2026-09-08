@@ -6,6 +6,7 @@ import {
   getScreening,
   decideScreening,
   fetchScreeningImageBlobUrl,
+  fetchScreeningSelfieBlobUrl,
 } from "./services";
 
 export function useScreenings(filter = {}) {
@@ -36,6 +37,33 @@ export function useScreeningImage(id) {
     let cancelled = false;
     let objectUrl = null;
     fetchScreeningImageBlobUrl(id).then((u) => {
+      if (cancelled) {
+        URL.revokeObjectURL(u);
+        return;
+      }
+      objectUrl = u;
+      setUrl(u);
+    });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id]);
+
+  return url;
+}
+
+export function useScreeningSelfie(id) {
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (!id) {
+      setUrl(null);
+      return;
+    }
+    let cancelled = false;
+    let objectUrl = null;
+    fetchScreeningSelfieBlobUrl(id).then((u) => {
       if (cancelled) {
         URL.revokeObjectURL(u);
         return;

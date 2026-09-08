@@ -2,8 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ShieldAlert, TriangleAlert, User, UserCheck, UserX, X } from "lucide-react";
 import Badge from "../ui/Badge";
 import RiskGauge from "../ui/RiskGauge";
-import { useScreening, useScreeningImage } from "../../features/screenings/hooks";
-import { timeAgo } from "../../lib/format";
+import { useScreening, useScreeningImage, useScreeningSelfie } from "../../features/screenings/hooks";
+import { timeAgo, fieldLabel } from "../../lib/format";
 
 const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
 const BAND_TONE = { GENUINE: "good", SUSPICIOUS: "warn", FAKE: "bad" };
@@ -21,6 +21,7 @@ const DECISION_STYLE = {
 export default function ScreeningDetailModal({ screeningId, onClose }) {
   const { data: item } = useScreening(screeningId);
   const imageUrl = useScreeningImage(screeningId);
+  const selfieUrl = useScreeningSelfie(item?.selfie_url ? screeningId : null);
   const decision = item?.officer_decision;
   const DecisionIcon = decision ? DECISION_ICON[decision.decision] : null;
   const tone = item ? BAND_TONE[item.verdict_band] ?? "warn" : "warn";
@@ -82,8 +83,8 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                           i !== arr.length - 1 ? "border-b border-line-soft" : ""
                         }`}
                       >
-                        <span className="text-[11.5px] text-ink-dim">{f.label}</span>
-                        <span className="font-mono text-[12.5px]">{f.value}</span>
+                        <span className="min-w-0 break-words text-[11.5px] text-ink-dim">{fieldLabel(f.label)}</span>
+                        <span className="min-w-0 break-all font-mono text-[12.5px]">{f.value}</span>
                       </div>
                     ))}
                     {(item.engine?.extracted_fields ?? []).length === 0 && (
@@ -117,6 +118,22 @@ export default function ScreeningDetailModal({ screeningId, onClose }) {
                     )}
                   </div>
                 </div>
+
+                {item.selfie_url && (
+                  <div className="rounded-2xl dark:rounded-lg border border-line p-5">
+                    <span className="mb-3 block text-[13px] font-semibold">Live Capture</span>
+                    <div className="flex items-center gap-4">
+                      <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-line bg-surface-sunken">
+                        {selfieUrl && <img src={selfieUrl} alt="Live capture" className="h-full w-full object-cover" />}
+                      </div>
+                      {item.face_match && (
+                        <span className="text-[11.5px] text-ink-dim">
+                          {Math.round(item.face_match.similarity_score * 100)}% similarity to document photo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {item.flags?.includes("blacklist_hit") && (
                   <div className="flex items-start gap-2.5 rounded-2xl dark:rounded-lg border border-bad/30 bg-bad-soft p-5">
