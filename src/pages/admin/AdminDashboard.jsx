@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
@@ -5,6 +6,7 @@ import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import StatCard from "../../components/ui/StatCard";
+import ScreeningDetailModal from "../../components/shared/ScreeningDetailModal";
 import { useMe } from "../../features/auth/hooks";
 import { useUsers } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
@@ -32,6 +34,7 @@ export default function AdminDashboard() {
   const { data: users = [] } = useUsers();
   const { data: checkpoints = [] } = useCheckpoints();
   const { data: summary, isLoading } = useDashboardSummary();
+  const [selectedId, setSelectedId] = useState(null);
 
   const verifiers = users.filter((u) => u.role === "verifier" && (!me?.region || u.region === me.region));
   const officerNameById = Object.fromEntries(users.map((u) => [u.id, u.full_name]));
@@ -147,6 +150,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + i * 0.06 }}
+                onClick={() => setSelectedId(c.id)}
                 className="flex cursor-pointer items-center gap-3 rounded-lg px-1.5 py-2.5 transition-colors hover:bg-surface-sunken/60"
               >
                 <FileText
@@ -171,6 +175,8 @@ export default function AdminDashboard() {
           </div>
         </Card>
       </div>
+
+      <ScreeningDetailModal screeningId={selectedId} onClose={() => setSelectedId(null)} />
     </>
   );
 }
