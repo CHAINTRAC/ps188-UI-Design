@@ -56,17 +56,17 @@ export default function ThreatLog() {
             <span className="h-2.5 w-2.5 rounded-full bg-bad" />
             <span className="h-2.5 w-2.5 rounded-full bg-warn" />
             <span className="h-2.5 w-2.5 rounded-full bg-good" />
-            <span className="ml-2.5 font-mono text-[11px] text-ink-faint">sentinel@checkpoint — threat-log — 24 checkpoints</span>
+            <span className="ml-2.5 min-w-0 flex-1 truncate font-mono text-[11px] text-ink-faint">sentinel@checkpoint — threat-log — 24 checkpoints</span>
           </div>
 
-          <div className="px-6 py-6 text-left font-mono text-[12px] leading-[2.15] sm:px-7">
+          <div className="overflow-x-auto px-4 py-6 text-left font-mono text-[11px] leading-[2.15] sm:px-7 sm:text-[12px]">
             {ROWS.map((row, i) => {
               const isPast = i < activeIndex || done;
               const isTyping = i === activeIndex;
               const text = typed[i] ?? "";
 
               return (
-                <div key={row.code} className="flex items-baseline gap-2">
+                <div key={row.code} className="flex items-baseline gap-2 whitespace-nowrap">
                   <span className="text-ink-faint">{String(i + 1).padStart(2, "0")}</span>
                   <span style={{ color: LEVEL_COLOR[row.level] }} className="font-semibold">
                     [{row.level}]{row.level === "MED" ? " " : ""}
@@ -76,7 +76,7 @@ export default function ThreatLog() {
                     {isTyping && <span className="inline-block h-[12px] w-[6px] translate-y-[1px] animate-pulse bg-brand" />}
                   </span>
                   <span
-                    className="ml-auto pl-3 text-ink-faint transition-opacity duration-500"
+                    className="ml-auto hidden pl-3 text-ink-faint transition-opacity duration-500 sm:inline-block"
                     style={{ opacity: isPast ? 1 : 0 }}
                   >
                     {row.stat}
