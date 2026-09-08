@@ -18,7 +18,6 @@ import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import RiskGauge from "../../components/ui/RiskGauge";
-import Select from "../../components/ui/Select";
 import CameraCaptureModal from "../../components/verifier/CameraCaptureModal";
 import { STAGES } from "../../data/verifierScenarios";
 import { useSubmitScreening, useDecideScreening } from "../../features/screenings/hooks";
@@ -30,13 +29,15 @@ const evidenceDot = { good: "bg-good", warn: "bg-warn", bad: "bg-bad" };
 const confBadge = (c) => (c >= 0.9 ? "good" : c >= 0.75 ? "warn" : "bad");
 const BAND_TONE = { GENUINE: "good", SUSPICIOUS: "warn", FAKE: "bad" };
 
-const DOC_TYPES = [
-  { value: "passport", label: "Passport" },
-  { value: "visa", label: "Visa" },
-  { value: "national_id", label: "National ID" },
-  { value: "driving_license", label: "Driving License" },
-  { value: "permit", label: "Permit" },
-];
+// The screening model classifies the document type itself — the officer no
+// longer picks one. Kept as a label lookup for the detected type.
+const DOC_LABEL = {
+  passport: "Passport",
+  visa: "Visa",
+  national_id: "National ID",
+  driving_license: "Driving License",
+  permit: "Permit",
+};
 
 async function dataUrlToFile(dataUrl, filename) {
   const res = await fetch(dataUrl);
@@ -59,7 +60,6 @@ export default function VerifierDashboard() {
   const [reason, setReason] = useState("");
   const [showDocCapture, setShowDocCapture] = useState(false);
 
-  const [docType, setDocType] = useState("passport");
   const [docNumber, setDocNumber] = useState("");
   const [holderName, setHolderName] = useState("");
   const [dob, setDob] = useState("");
@@ -83,7 +83,6 @@ export default function VerifierDashboard() {
     setStageIndex(-1);
     setResult(null);
     setReason("");
-    setDocType("passport");
     setDocNumber("");
     setHolderName("");
     setDob("");
@@ -119,7 +118,7 @@ export default function VerifierDashboard() {
     setStatus("processing");
     const formData = new FormData();
     formData.append("document", file);
-    formData.append("doc_type", docType);
+    // doc_type is intentionally omitted — the screening model classifies it.
     if (docNumber) formData.append("doc_number", docNumber);
     if (holderName) formData.append("holder_name", holderName);
     if (dob) formData.append("dob", dob);
@@ -162,7 +161,11 @@ export default function VerifierDashboard() {
           <Card delay={0.02}>
             <div className="mb-3.5 flex items-center justify-between">
               <span className="text-[13.5px] font-semibold">Document</span>
-              {status !== "idle" && <Badge variant="brand">{DOC_TYPES.find((d) => d.value === docType)?.label}</Badge>}
+              {result?.doc_type ? (
+                <Badge variant="brand">{DOC_LABEL[result.doc_type] || result.doc_type}</Badge>
+              ) : (
+                status !== "idle" && <Badge variant="neutral">Type auto-detected</Badge>
+              )}
             </div>
 
             {status === "idle" && (
@@ -203,14 +206,10 @@ export default function VerifierDashboard() {
 
             {status === "ready" && (
               <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-                <label className="col-span-2 flex flex-col gap-1">
-                  <span className="text-[11px] font-medium text-ink-dim">Document type</span>
-                  <Select
-                    value={docType}
-                    onChange={setDocType}
-                    options={DOC_TYPES.map((d) => ({ value: d.value, label: d.label }))}
-                  />
-                </label>
+                <p className="col-span-2 -mt-0.5 text-[11px] text-ink-faint">
+                  The model identifies the document type automatically. Fields below are optional and only sharpen the
+                  blacklist and expiry checks.
+                </p>
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-medium text-ink-dim">Document no. (optional)</span>
                   <input

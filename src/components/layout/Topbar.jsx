@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 
-export default function Topbar({ title, subtitle, liveLabel }) {
+export default function Topbar({ title, subtitle, liveLabel, actions }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3">
       <div>
         <motion.h1
           key={title}
@@ -24,6 +24,7 @@ export default function Topbar({ title, subtitle, liveLabel }) {
           {liveLabel}
         </div>
       )}
+      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
   );
 }

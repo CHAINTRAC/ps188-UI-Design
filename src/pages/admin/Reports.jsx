@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { Download } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
@@ -56,18 +58,56 @@ export default function Reports() {
     ...(r.checkpoint_breakdown ?? []).map((c) => c.id),
     ...Object.keys(verifiersByCheckpoint),
   ]);
-  const todayByCheckpoint = Object.fromEntries((r.checkpoint_breakdown ?? []).map((c) => [c.id, c.today]));
+  const cpById = Object.fromEntries((r.checkpoint_breakdown ?? []).map((c) => [c.id, c]));
   const checkpointBreakdown = [...checkpointIds]
     .map((id) => ({
       checkpoint: id,
       verifiers: verifiersByCheckpoint[id] || 0,
-      today: todayByCheckpoint[id] || 0,
+      today: cpById[id]?.today || 0,
+      total: cpById[id]?.total || 0,
     }))
     .sort((a, b) => b.today - a.today);
 
+  const [downloading, setDownloading] = useState(false);
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      // jsPDF is heavy — only pull it in when the user actually exports.
+      const { downloadReportsPdf } = await import("../../features/reports/pdf");
+      downloadReportsPdf({
+        region: me?.region || r.region || "",
+        generatedBy: me?.full_name || me?.username || "",
+        kpis: {
+          total: r.total_screenings ?? 0,
+          fakeRate: r.fake_rate ?? 0,
+          escalated: r.escalated ?? 0,
+          avgSeconds: r.avg_decision_seconds ?? 0,
+        },
+        weeklyVolume,
+        docTypeBreakdown,
+        checkpointBreakdown,
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <>
-      <Topbar title="Reports" subtitle={`${me?.region || "—"} · trends & breakdowns`} />
+      <Topbar
+        title="Reports"
+        subtitle={`${me?.region || "—"} · trends & breakdowns`}
+        actions={
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-[12.5px] font-medium text-ink-dim transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-60"
+          >
+            <Download size={14} strokeWidth={1.9} />
+            {downloading ? "Preparing…" : "Download PDF"}
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total Screenings" value={r.total_screenings ?? 0} delay={0} />
