@@ -40,7 +40,7 @@ export default function HeaderShell({ role }) {
       </div>
 
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 md:grid-cols-3">
+        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6 lg:gap-6">
           <Link to="/" className="flex items-center gap-2.5 justify-self-start">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy">
               <ShieldCheck size={16} strokeWidth={1.9} className="text-brand" />
@@ -48,7 +48,7 @@ export default function HeaderShell({ role }) {
             <span className="font-display text-[15px] font-semibold text-ink">Sentinel</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 justify-self-center md:flex">
+          <nav className="hidden items-center gap-0.5 justify-self-center lg:flex">
             {role.nav.map((item) => {
               const active = location.pathname === item.path;
               const Icon = item.icon;
@@ -56,7 +56,7 @@ export default function HeaderShell({ role }) {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-[13.5px] font-medium transition-colors ${
+                  className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
                     active ? "text-ink" : "text-ink-faint hover:text-ink-dim"
                   }`}
                 >
@@ -74,11 +74,11 @@ export default function HeaderShell({ role }) {
             })}
           </nav>
 
-          <div className="flex items-center gap-2 justify-self-end sm:gap-3">
+          <div className="flex items-center gap-2 justify-self-end sm:gap-2.5">
             <ThemeToggle />
-            <div className="hidden flex-col items-end lg:flex">
-              <span className="text-[12.5px] font-medium leading-tight text-ink">{userName}</span>
-              <span className="text-[10.5px] leading-tight text-ink-faint">{role.userMeta}</span>
+            <div className="hidden max-w-[11rem] flex-col items-end lg:flex">
+              <span className="w-full truncate text-right text-[12.5px] font-medium leading-tight text-ink">{userName}</span>
+              <span className="w-full truncate text-right text-[10.5px] leading-tight text-ink-faint">{role.userMeta}</span>
             </div>
             <Link
               to={`${role.basePath}/profile`}
@@ -97,7 +97,7 @@ export default function HeaderShell({ role }) {
             <button
               onClick={() => setMobileOpen((o) => !o)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-ink-dim transition-colors hover:bg-surface-sunken md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-ink-dim transition-colors hover:bg-surface-sunken lg:hidden"
             >
               {mobileOpen ? <X size={17} strokeWidth={1.85} /> : <Menu size={17} strokeWidth={1.85} />}
             </button>
@@ -111,7 +111,7 @@ export default function HeaderShell({ role }) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="overflow-hidden border-t border-line md:hidden"
+              className="overflow-hidden border-t border-line lg:hidden"
             >
               <nav className="flex flex-col gap-1 px-4 py-3">
                 {role.nav.map((item) => {

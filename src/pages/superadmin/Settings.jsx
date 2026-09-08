@@ -12,13 +12,19 @@ function Toggle({ checked, onChange, label, description }) {
         <p className="mt-0.5 text-[11.5px] text-ink-faint">{description}</p>
       </div>
       <button
+        type="button"
         onClick={() => onChange(!checked)}
-        aria-pressed={checked}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-brand" : "bg-surface-sunken border border-line"}`}
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors ${
+          checked ? "border-brand bg-brand" : "border-line bg-surface-sunken"
+        }`}
       >
         <span
-          className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform"
-          style={{ transform: checked ? "translateX(21px)" : "translateX(2px)" }}
+          className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            checked ? "translate-x-[22px]" : "translate-x-1"
+          }`}
         />
       </button>
     </div>

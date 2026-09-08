@@ -4,7 +4,8 @@ import { KeyRound, Mail, MapPinned, Plus, User, UserPlus, X } from "lucide-react
 import Topbar from "../../components/layout/Topbar";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
-import { useUsers, useCreateUser, useResetUserPassword } from "../../features/users/hooks";
+import Select from "../../components/ui/Select";
+import { useUsers, useCreateUser, useResetUserPassword, useUpdateUser } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
 import { initialsFor } from "../../lib/format";
 
@@ -13,9 +14,35 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function AdminDetail({ admin, team, checkpoints, onClose }) {
+const ROLE_OPTIONS = [
+  { value: "verifier", label: "Verifier" },
+  { value: "admin", label: "Admin" },
+  { value: "superadmin", label: "Super Admin" },
+];
+
+function AdminDetail({ admin, team, checkpoints, regions, onClose }) {
   const managed = checkpoints.filter((c) => c.admin_id === admin.id);
   const resetPassword = useResetUserPassword();
+  const updateUser = useUpdateUser();
+  const [region, setRegion] = useState(admin.region || "");
+  const [role, setRole] = useState(admin.role);
+  const disabled = admin.status !== "active";
+
+  const saveRegion = () => {
+    const next = region.trim();
+    if (next && next !== admin.region) updateUser.mutate({ id: admin.id, region: next });
+  };
+  const changeRole = (next) => {
+    setRole(next);
+    if (next && next !== admin.role) {
+      const payload = { id: admin.id, role: next };
+      // A new verifier needs a checkpoint; a new admin needs a region. Send the
+      // current region along so an admin↔superadmin move keeps/clears scope
+      // server-side; the backend rejects a promotion that still lacks its scope.
+      if (next === "admin" && region.trim()) payload.region = region.trim();
+      updateUser.mutate(payload);
+    }
+  };
 
   return (
     <motion.div
@@ -92,6 +119,57 @@ function AdminDetail({ admin, team, checkpoints, onClose }) {
             {resetPassword.error.response?.data?.error?.message || "Could not reset password."}
           </div>
         )}
+
+        <div className="mb-6 rounded-lg border border-line px-3.5 py-3">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-[12.5px] font-medium text-ink">Account status</div>
+              <div className="text-[11px] text-ink-faint">
+                {disabled ? "Disabled — cannot sign in." : "Active — full access for their region."}
+              </div>
+            </div>
+            <button
+              onClick={() => updateUser.mutate({ id: admin.id, status: disabled ? "active" : "disabled" })}
+              disabled={updateUser.isPending}
+              className={`shrink-0 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                disabled
+                  ? "border-good/40 text-good-ink hover:bg-good-soft"
+                  : "border-bad/40 text-bad-ink hover:bg-bad-soft"
+              }`}
+            >
+              {disabled ? "Enable" : "Disable"}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-medium text-ink-dim">Region</span>
+              <div className="flex gap-1.5">
+                <input
+                  list="admin-regions"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  onBlur={saveRegion}
+                  className="w-full rounded-lg border border-line bg-surface-sunken/60 px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-brand"
+                />
+                <datalist id="admin-regions">
+                  {regions.map((r) => (
+                    <option key={r} value={r} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-medium text-ink-dim">Role</span>
+              <Select value={role} onChange={changeRole} options={ROLE_OPTIONS} />
+            </div>
+          </div>
+          {updateUser.isError && (
+            <div className="mt-2 text-[11px] text-bad-ink">
+              {updateUser.error.response?.data?.error?.message || "Could not update the account."}
+            </div>
+          )}
+        </div>
 
         <span className="mb-3 block text-[13px] font-semibold">Checkpoints Managed</span>
         <div className="flex flex-col gap-1.5">
@@ -332,7 +410,13 @@ export default function Admins() {
 
       <AnimatePresence>
         {selected && (
-          <AdminDetail admin={selected} team={teamFor(selected)} checkpoints={checkpoints} onClose={() => setSelected(null)} />
+          <AdminDetail
+            admin={selected}
+            team={teamFor(selected)}
+            checkpoints={checkpoints}
+            regions={regions}
+            onClose={() => setSelected(null)}
+          />
         )}
         {showAdd && (
           <AddAdminModal regions={regions} onClose={() => setShowAdd(false)} onCreated={() => setShowAdd(false)} />

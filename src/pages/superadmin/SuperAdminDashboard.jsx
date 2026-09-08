@@ -6,7 +6,7 @@ import Card from "../../components/ui/Card";
 import StatCard from "../../components/ui/StatCard";
 import { useUsers } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
-import { useScreenings } from "../../features/screenings/hooks";
+import { useDashboardSummary } from "../../features/dashboard/hooks";
 import { useAuditLogs } from "../../features/audit/hooks";
 import { describeAuditEntry } from "../../features/audit/format";
 
@@ -17,17 +17,10 @@ const ACTION_ICON = {
   warn: { Icon: Settings2, bg: "bg-warn-soft", fg: "text-warn-ink" },
 };
 
-function isToday(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
-}
-
 export default function SuperAdminDashboard() {
   const { data: users = [] } = useUsers();
   const { data: checkpoints = [] } = useCheckpoints();
-  const { data: screenings = [] } = useScreenings();
+  const { data: summary } = useDashboardSummary();
   const { data: auditEntries = [] } = useAuditLogs({ limit: 5 });
 
   const admins = users.filter((u) => u.role === "admin");
@@ -36,15 +29,18 @@ export default function SuperAdminDashboard() {
   const usersById = Object.fromEntries(users.map((u) => [u.id, u.full_name]));
   const auditTrail = auditEntries.map((e) => describeAuditEntry(e, usersById));
 
-  const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
-  const decidedCount = screenings.filter((s) => s.officer_decision).length;
-  const decisionRate = screenings.length ? (decidedCount / screenings.length) * 100 : 0;
+  const s = summary ?? {};
+  const totals = s.totals ?? {};
+  // checkpoint_activity[].id is the checkpoint *code* (screenings denormalise the
+  // code, not the ObjectID), so it keys straight off CheckpointView.code below.
+  const todayByCheckpoint = Object.fromEntries((s.checkpoint_activity ?? []).map((a) => [a.id, a.today]));
+  const decisionRate = s.screenings_total ? ((s.decided_total ?? 0) / s.screenings_total) * 100 : 0;
 
   const orgStats = [
-    { label: "Checkpoints", value: checkpoints.length },
-    { label: "Admins", value: admins.length },
-    { label: "Verifiers", value: verifiers.length },
-    { label: "Screenings Today", value: todaysScreenings.length },
+    { label: "Checkpoints", value: totals.checkpoints ?? checkpoints.length },
+    { label: "Admins", value: totals.admins ?? admins.length },
+    { label: "Verifiers", value: totals.verifiers ?? verifiers.length },
+    { label: "Screenings Today", value: s.screenings_today ?? 0 },
     { label: "Decision Rate", value: decisionRate, decimals: 1, suffix: "%", tone: "good", accent: true },
   ];
 
@@ -53,8 +49,8 @@ export default function SuperAdminDashboard() {
       <Topbar title="Organization Overview" subtitle="All regions · Ministry of Home Affairs / SSB" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {orgStats.map((s, i) => (
-          <StatCard key={s.label} delay={0.02 * i} {...s} />
+        {orgStats.map((st, i) => (
+          <StatCard key={st.label} delay={0.02 * i} {...st} />
         ))}
       </div>
 
@@ -73,7 +69,6 @@ export default function SuperAdminDashboard() {
               </div>
               {checkpoints.map((c, i) => {
                 const verifierCount = verifiers.filter((v) => v.checkpoint_id === c.code).length;
-                const today = todaysScreenings.filter((s) => s.checkpoint_id === c.code).length;
                 return (
                   <div
                     key={c.id}
@@ -89,7 +84,7 @@ export default function SuperAdminDashboard() {
                       {c.status === "active" ? "Active" : "Attention"}
                     </span>
                     <span className="font-mono text-[12px]">{verifierCount}</span>
-                    <span className="font-mono text-[12px]">{today}</span>
+                    <span className="font-mono text-[12px]">{todayByCheckpoint[c.code] ?? 0}</span>
                   </div>
                 );
               })}

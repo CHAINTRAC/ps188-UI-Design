@@ -6,7 +6,7 @@ import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Select from "../../components/ui/Select";
 import ScreeningDetailModal from "../../components/shared/ScreeningDetailModal";
-import { useUsers, useCreateUser, useResetUserPassword } from "../../features/users/hooks";
+import { useUsers, useCreateUser, useResetUserPassword, useUpdateUser } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
 import { useScreenings } from "../../features/screenings/hooks";
 import { useMe } from "../../features/auth/hooks";
@@ -25,10 +25,23 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function VerifierDetail({ verifier, onClose, onOpenCase }) {
-  const { data: screenings = [], isLoading } = useScreenings({ checkpointId: verifier.checkpoint_id });
-  const history = screenings.filter((s) => s.officer_id === verifier.id);
+function VerifierDetail({ verifier, checkpoints, onClose, onOpenCase }) {
+  const [checkpointId, setCheckpointId] = useState(verifier.checkpoint_id);
   const resetPassword = useResetUserPassword();
+  const updateUser = useUpdateUser();
+  const disabled = verifier.status !== "active";
+
+  // "Recent Screenings" tracks whichever checkpoint is selected in the drawer —
+  // it follows a reassignment instead of staying pinned to the original.
+  const { data: screenings = [], isLoading } = useScreenings({ checkpointId });
+  const history = screenings.filter((s) => s.officer_id === verifier.id);
+
+  const reassign = (code) => {
+    setCheckpointId(code);
+    if (code && code !== verifier.checkpoint_id) {
+      updateUser.mutate({ id: verifier.id, checkpoint_id: code });
+    }
+  };
 
   return (
     <motion.div
@@ -108,6 +121,42 @@ function VerifierDetail({ verifier, onClose, onOpenCase }) {
             {resetPassword.error.response?.data?.error?.message || "Could not reset password."}
           </div>
         )}
+
+        <div className="mb-6 rounded-lg border border-line px-3.5 py-3">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-[12.5px] font-medium text-ink">Account status</div>
+              <div className="text-[11px] text-ink-faint">
+                {disabled ? "Disabled — this verifier cannot sign in." : "Active — can sign in and screen documents."}
+              </div>
+            </div>
+            <button
+              onClick={() => updateUser.mutate({ id: verifier.id, status: disabled ? "active" : "disabled" })}
+              disabled={updateUser.isPending}
+              className={`shrink-0 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                disabled
+                  ? "border-good/40 text-good-ink hover:bg-good-soft"
+                  : "border-bad/40 text-bad-ink hover:bg-bad-soft"
+              }`}
+            >
+              {disabled ? "Enable" : "Disable"}
+            </button>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-ink-dim">Checkpoint</span>
+            <Select
+              value={checkpointId}
+              onChange={reassign}
+              options={checkpoints.map((cp) => ({ value: cp.code, label: cp.code }))}
+              placeholder="Select a checkpoint"
+            />
+          </div>
+          {updateUser.isError && (
+            <div className="mt-2 text-[11px] text-bad-ink">
+              {updateUser.error.response?.data?.error?.message || "Could not update the account."}
+            </div>
+          )}
+        </div>
 
         <span className="mb-3 block text-[13px] font-semibold">Recent Screenings</span>
         <div className="flex flex-col gap-1.5">
@@ -380,6 +429,7 @@ export default function Verifiers() {
         {selectedVerifier && (
           <VerifierDetail
             verifier={selectedVerifier}
+            checkpoints={checkpoints}
             onClose={() => setSelectedVerifier(null)}
             onOpenCase={setSelectedCase}
           />

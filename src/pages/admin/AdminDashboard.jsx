@@ -8,7 +8,7 @@ import StatCard from "../../components/ui/StatCard";
 import { useMe } from "../../features/auth/hooks";
 import { useUsers } from "../../features/users/hooks";
 import { useCheckpoints } from "../../features/checkpoints/hooks";
-import { useScreenings } from "../../features/screenings/hooks";
+import { useDashboardSummary } from "../../features/dashboard/hooks";
 import { timeAgo } from "../../lib/format";
 import { BAD, GOOD, WARN } from "../../lib/chartColors";
 
@@ -27,65 +27,31 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function isToday(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
-}
-
-function buildWeeklyVolume(screenings) {
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push({ key: d.toDateString(), day: d.toLocaleDateString("en-US", { weekday: "short" }), genuine: 0, suspicious: 0, fake: 0 });
-  }
-  const byKey = Object.fromEntries(days.map((d) => [d.key, d]));
-  for (const s of screenings) {
-    const bucket = byKey[new Date(s.created_at).toDateString()];
-    if (!bucket) continue;
-    if (s.verdict_band === "GENUINE") bucket.genuine += 1;
-    else if (s.verdict_band === "FAKE") bucket.fake += 1;
-    else bucket.suspicious += 1;
-  }
-  return days;
-}
-
-function avgDecisionSeconds(screenings) {
-  const decided = screenings.filter((s) => s.officer_decision);
-  if (decided.length === 0) return 0;
-  const total = decided.reduce((sum, s) => sum + (new Date(s.officer_decision.decided_at) - new Date(s.created_at)), 0);
-  return Math.round(total / decided.length / 1000);
-}
-
 export default function AdminDashboard() {
   const { data: me } = useMe();
   const { data: users = [] } = useUsers();
   const { data: checkpoints = [] } = useCheckpoints();
-  const { data: screenings = [] } = useScreenings();
+  const { data: summary, isLoading } = useDashboardSummary();
 
   const verifiers = users.filter((u) => u.role === "verifier" && (!me?.region || u.region === me.region));
-  const officerNameById = Object.fromEntries(verifiers.map((v) => [v.id, v.full_name]));
+  const officerNameById = Object.fromEntries(users.map((u) => [u.id, u.full_name]));
 
-  const todaysScreenings = screenings.filter((s) => isToday(s.created_at));
-  const decidedToday = todaysScreenings.filter((s) => s.officer_decision);
-  const decisionRate = todaysScreenings.length ? (decidedToday.length / todaysScreenings.length) * 100 : 0;
-  const escalatedCount = screenings.filter((s) => s.officer_decision?.decision === "escalate").length;
+  const s = summary ?? {};
+  const screeningsToday = s.screenings_today ?? 0;
+  const decidedToday = s.decided_today ?? 0;
+  const decisionRate = screeningsToday ? (decidedToday / screeningsToday) * 100 : 0;
+
+  const todayByVerifier = Object.fromEntries((s.verifier_activity ?? []).map((a) => [a.id, a.today]));
 
   const stats = [
-    { label: "Verifications Today", value: todaysScreenings.length },
+    { label: "Verifications Today", value: screeningsToday },
     { label: "Decision Rate", value: decisionRate, decimals: 1, suffix: "%" },
-    { label: "Avg Decision Time", value: avgDecisionSeconds(screenings), suffix: "s" },
-    { label: "Escalated Cases", value: escalatedCount, tone: "warn", accent: true },
+    { label: "Avg Decision Time", value: s.avg_decision_seconds ?? 0, suffix: "s" },
+    { label: "Escalated Cases", value: s.escalated ?? 0, tone: "warn", accent: true },
   ];
 
-  const weeklyVolume = buildWeeklyVolume(screenings);
-
-  const flaggedCases = screenings
-    .filter((s) => !s.officer_decision && (s.verdict_band !== "GENUINE" || s.flags?.includes("blacklist_hit")))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 6);
+  const weeklyVolume = s.weekly_volume ?? [];
+  const flaggedCases = (s.flagged_cases ?? []).slice(0, 6);
 
   return (
     <>
@@ -95,8 +61,8 @@ export default function AdminDashboard() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((s, i) => (
-          <StatCard key={s.label} delay={0.02 * i} {...s} />
+        {stats.map((st, i) => (
+          <StatCard key={st.label} delay={0.02 * i} {...st} />
         ))}
       </div>
 
@@ -146,25 +112,22 @@ export default function AdminDashboard() {
                   <span>STATUS</span>
                   <span>TODAY</span>
                 </div>
-                {verifiers.map((v, i) => {
-                  const today = todaysScreenings.filter((s) => s.officer_id === v.id).length;
-                  return (
-                    <div
-                      key={v.id}
-                      className={`grid grid-cols-[1.4fr_1fr_0.8fr_0.8fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
-                        i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
-                      }`}
-                    >
-                      <span className="text-[12.5px] font-medium">{v.full_name}</span>
-                      <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint_id}</span>
-                      <span className={`flex items-center gap-1.5 text-[11px] ${v.status === "active" ? "text-good-ink" : "text-ink-faint"}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${v.status === "active" ? "bg-good" : "bg-line"}`} />
-                        {v.status === "active" ? "Active" : "Disabled"}
-                      </span>
-                      <span className="font-mono text-[12px]">{today}</span>
-                    </div>
-                  );
-                })}
+                {verifiers.map((v, i) => (
+                  <div
+                    key={v.id}
+                    className={`grid grid-cols-[1.4fr_1fr_0.8fr_0.8fr] items-center gap-2 py-2.5 transition-colors hover:bg-surface-sunken/60 ${
+                      i !== verifiers.length - 1 ? "border-b border-line-soft" : ""
+                    }`}
+                  >
+                    <span className="text-[12.5px] font-medium">{v.full_name}</span>
+                    <span className="font-mono text-[11.5px] text-ink-dim">{v.checkpoint_id}</span>
+                    <span className={`flex items-center gap-1.5 text-[11px] ${v.status === "active" ? "text-good-ink" : "text-ink-faint"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${v.status === "active" ? "bg-good" : "bg-line"}`} />
+                      {v.status === "active" ? "Active" : "Disabled"}
+                    </span>
+                    <span className="font-mono text-[12px]">{todayByVerifier[v.id] ?? 0}</span>
+                  </div>
+                ))}
                 {verifiers.length === 0 && <div className="py-4 text-[12px] text-ink-faint">No verifiers in this region yet.</div>}
               </div>
             </div>
@@ -177,6 +140,7 @@ export default function AdminDashboard() {
             <Badge variant="bad">{flaggedCases.length} new</Badge>
           </div>
           <div className="flex flex-col">
+            {isLoading && <div className="py-4 text-[12px] text-ink-faint">Loading…</div>}
             {flaggedCases.map((c, i) => (
               <motion.div
                 key={c.id}
@@ -201,7 +165,9 @@ export default function AdminDashboard() {
                 <Badge variant={c.verdict_band === "FAKE" ? "bad" : "warn"}>{c.verdict}</Badge>
               </motion.div>
             ))}
-            {flaggedCases.length === 0 && <div className="py-4 text-[12px] text-ink-faint">Nothing flagged right now.</div>}
+            {!isLoading && flaggedCases.length === 0 && (
+              <div className="py-4 text-[12px] text-ink-faint">Nothing flagged right now.</div>
+            )}
           </div>
         </Card>
       </div>
