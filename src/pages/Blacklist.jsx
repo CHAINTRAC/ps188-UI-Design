@@ -1,43 +1,90 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Ban, FileWarning, Plus, ShieldAlert, TriangleAlert, UserX, X } from "lucide-react";
+import { Ban, FileWarning, ImagePlus, Plus, Search, ShieldAlert, TriangleAlert, User, UserX, X } from "lucide-react";
 import Topbar from "../components/layout/Topbar";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
-import { useBlacklist, useCreateBlacklistEntry, useDeactivateBlacklistEntry } from "../features/blacklist/hooks";
+import Select from "../components/ui/Select";
+import { useBlacklist, useBlacklistPhoto, useCreateBlacklistEntry, useDeactivateBlacklistEntry } from "../features/blacklist/hooks";
 import { useUsers } from "../features/users/hooks";
+import useDebouncedValue from "../lib/useDebouncedValue";
+import { timeAgo } from "../lib/format";
 
-const KIND_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "document", label: "Document" },
-  { key: "identity", label: "Identity" },
+const KIND_FILTER_OPTIONS = [
+  { value: "all", label: "All kinds" },
+  { value: "document", label: "Document" },
+  { value: "identity", label: "Identity" },
 ];
 
-const STATUS_FILTERS = [
-  { key: "active", label: "Active" },
-  { key: "all", label: "All" },
+const STATUS_FILTER_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "all", label: "All statuses" },
 ];
+
+const DOC_TYPE_OPTIONS = [
+  { value: "", label: "Unspecified" },
+  { value: "passport", label: "Passport" },
+  { value: "visa", label: "Visa" },
+  { value: "national_id", label: "National ID" },
+  { value: "driving_license", label: "Driving License" },
+  { value: "permit", label: "Permit" },
+];
+const DOC_TYPE_LABEL = Object.fromEntries(DOC_TYPE_OPTIONS.map((o) => [o.value, o.label]));
+
+// Same values as DOC_TYPE_OPTIONS, but "" reads as "any type" in a filter
+// context rather than "unspecified" in the add-entry form.
+const DOC_TYPE_FILTER_OPTIONS = [{ value: "", label: "All document types" }, ...DOC_TYPE_OPTIONS.slice(1)];
 
 function matchLabel(entry) {
   if (entry.kind === "document") return entry.doc_number;
   return [entry.name, entry.dob, entry.nationality].filter(Boolean).join(" · ");
 }
 
+function EntryThumbnail({ entry }) {
+  const url = useBlacklistPhoto(entry.photo_url ? entry.id : null);
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface-sunken">
+      {url ? (
+        <img src={url} alt="" className="h-full w-full object-cover" />
+      ) : entry.kind === "document" ? (
+        <FileWarning size={14} strokeWidth={1.75} className="text-ink-faint" />
+      ) : (
+        <UserX size={14} strokeWidth={1.75} className="text-ink-faint" />
+      )}
+    </div>
+  );
+}
+
 function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
   const [kind, setKind] = useState("document");
   const [docNumber, setDocNumber] = useState("");
+  const [docType, setDocType] = useState("");
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [nationality, setNationality] = useState("");
   const [reason, setReason] = useState("");
   const [source, setSource] = useState("");
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const base = { kind, doc_type: docType || undefined, reason, source: source || undefined, photo: photo || undefined };
     const payload =
       kind === "document"
-        ? { kind, doc_number: docNumber, reason, source: source || undefined }
-        : { kind, name, dob: dob || undefined, nationality: nationality || undefined, reason, source: source || undefined };
+        ? { ...base, doc_number: docNumber }
+        : { ...base, name, dob: dob || undefined, nationality: nationality || undefined };
     onCreate(payload);
   };
 
@@ -55,7 +102,7 @@ function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
         exit={{ opacity: 0, y: 12, scale: 0.97 }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[440px] rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+        className="max-h-[90vh] w-full max-w-[440px] overflow-y-auto rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
       >
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -101,6 +148,30 @@ function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
                 {k.label}
               </button>
             ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="blacklist-photo"
+              className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-line bg-surface-sunken/60 hover:border-brand"
+            >
+              {photoPreview ? (
+                <img src={photoPreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <ImagePlus size={18} strokeWidth={1.75} className="text-ink-faint" />
+              )}
+            </label>
+            <input
+              id="blacklist-photo"
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[11.5px] font-medium text-ink-dim">Photo (optional)</span>
+              <span className="text-[11px] text-ink-faint">A reference photo shown alongside this entry.</span>
+            </div>
           </div>
 
           {kind === "document" ? (
@@ -153,6 +224,11 @@ function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
           )}
 
           <label className="flex flex-col gap-1.5">
+            <span className="text-[11.5px] font-medium text-ink-dim">Document Type (optional)</span>
+            <Select value={docType} onChange={setDocType} options={DOC_TYPE_OPTIONS} />
+          </label>
+
+          <label className="flex flex-col gap-1.5">
             <span className="text-[11.5px] font-medium text-ink-dim">Reason</span>
             <textarea
               required
@@ -195,14 +271,114 @@ function AddEntryModal({ onClose, onCreate, isPending, errorMessage }) {
   );
 }
 
+function DetailRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-line-soft last:border-b-0">
+      <span className="text-[11.5px] text-ink-faint">{label}</span>
+      <span className="text-right text-[12.5px] font-medium text-ink">{value}</span>
+    </div>
+  );
+}
+
+function EntryDetailModal({ entry, addedByName, onClose, onDeactivate, isDeactivating }) {
+  const photoUrl = useBlacklistPhoto(entry.photo_url ? entry.id : null);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 340, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-[440px] overflow-y-auto rounded-2xl dark:rounded-lg border border-line bg-surface p-7 shadow-[var(--shadow-panel)]"
+      >
+        <div className="mb-5 flex items-start justify-between">
+          <div>
+            <div className="font-mono text-[14px] font-semibold text-ink">{matchLabel(entry)}</div>
+            <div className="text-[11.5px] text-ink-faint">
+              {entry.kind === "document" ? "Document" : "Identity"} · added {timeAgo(entry.created_at)}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line text-ink-faint hover:bg-surface-sunken"
+          >
+            <X size={15} strokeWidth={1.75} />
+          </button>
+        </div>
+
+        <div className="mb-5 flex h-[220px] items-center justify-center overflow-hidden rounded-2xl dark:rounded-lg border border-line bg-surface-sunken">
+          {photoUrl ? (
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          ) : entry.kind === "document" ? (
+            <FileWarning size={40} strokeWidth={1.25} className="text-ink-faint" />
+          ) : (
+            <User size={40} strokeWidth={1.25} className="text-ink-faint" />
+          )}
+        </div>
+
+        <Badge variant={entry.active ? "bad" : "neutral"} className="mb-4 w-fit">
+          {entry.active ? "Active — blocks matching screenings" : "Inactive — no longer blocks"}
+        </Badge>
+
+        <div className="rounded-2xl dark:rounded-lg border border-line px-4">
+          <DetailRow label="Document number" value={entry.doc_number} />
+          <DetailRow label="Document type" value={entry.doc_type ? DOC_TYPE_LABEL[entry.doc_type] ?? entry.doc_type : null} />
+          <DetailRow label="Name" value={entry.name} />
+          <DetailRow label="Date of birth" value={entry.dob} />
+          <DetailRow label="Nationality" value={entry.nationality} />
+          <DetailRow label="Source" value={entry.source} />
+          <DetailRow label="Added by" value={addedByName} />
+          <DetailRow label="Added on" value={new Date(entry.created_at).toLocaleString()} />
+        </div>
+
+        <div className="mt-4 rounded-2xl dark:rounded-lg border border-line bg-surface-sunken/50 p-4">
+          <span className="mb-1.5 block text-[11.5px] font-medium text-ink-dim">Reason</span>
+          <p className="text-[12.5px] leading-relaxed text-ink">{entry.reason}</p>
+        </div>
+
+        {entry.active && (
+          <motion.button
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onDeactivate}
+            disabled={isDeactivating}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-bad/30 bg-bad-soft py-2.5 text-[12.5px] font-semibold text-bad-ink disabled:opacity-60"
+          >
+            {isDeactivating ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-bad-ink/30 border-t-bad-ink" />
+            ) : (
+              "Deactivate — unblock this entry"
+            )}
+          </motion.button>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Blacklist() {
   const [kindFilter, setKindFilter] = useState("all");
+  const [docTypeFilter, setDocTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("active");
+  const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const { data: entries = [], isLoading } = useBlacklist({
     kind: kindFilter === "all" ? undefined : kindFilter,
-    active: statusFilter === "all" ? undefined : true,
+    docType: docTypeFilter || undefined,
+    active: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
+    q: debouncedSearch || undefined,
   });
   const { data: users = [] } = useUsers();
   const createEntry = useCreateBlacklistEntry();
@@ -216,33 +392,18 @@ export default function Blacklist() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {KIND_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setKindFilter(f.key)}
-              className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-colors ${
-                kindFilter === f.key
-                  ? "border-navy bg-navy text-white"
-                  : "border-line bg-surface text-ink-dim hover:bg-surface-sunken"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-          <span className="mx-1 h-4 w-px bg-line" />
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setStatusFilter(f.key)}
-              className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-colors ${
-                statusFilter === f.key
-                  ? "border-navy bg-navy text-white"
-                  : "border-line bg-surface text-ink-dim hover:bg-surface-sunken"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          <Select value={kindFilter} onChange={setKindFilter} options={KIND_FILTER_OPTIONS} className="w-36" />
+          <Select value={docTypeFilter} onChange={setDocTypeFilter} options={DOC_TYPE_FILTER_OPTIONS} className="w-44" />
+          <Select value={statusFilter} onChange={setStatusFilter} options={STATUS_FILTER_OPTIONS} className="w-36" />
+          <div className="ml-1 flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5">
+            <Search size={13} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search number, name, reason…"
+              className="w-48 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-faint"
+            />
+          </div>
         </div>
         <motion.button
           whileHover={{ y: -1 }}
@@ -257,10 +418,12 @@ export default function Blacklist() {
 
       <Card noPad delay={0.05}>
         <div className="overflow-x-auto">
-          <div className="min-w-[680px]">
-            <div className="grid grid-cols-[0.7fr_1.2fr_1.6fr_1fr_0.9fr_0.7fr] gap-2 border-b border-line-soft px-5 py-3 text-[10.5px] tracking-wide text-ink-faint">
+          <div className="min-w-[860px]">
+            <div className="grid grid-cols-[44px_0.7fr_1.1fr_0.9fr_1.5fr_0.9fr_0.7fr_0.7fr] gap-2 border-b border-line-soft px-5 py-3 text-[10.5px] tracking-wide text-ink-faint">
+              <span></span>
               <span>KIND</span>
               <span>MATCH</span>
+              <span>DOC TYPE</span>
               <span>REASON</span>
               <span>ADDED BY</span>
               <span>STATUS</span>
@@ -274,10 +437,12 @@ export default function Blacklist() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.35 }}
-                  className={`grid grid-cols-[0.7fr_1.2fr_1.6fr_1fr_0.9fr_0.7fr] items-center gap-2 px-5 py-3.5 transition-colors hover:bg-surface-sunken/60 ${
+                  onClick={() => setSelected(e)}
+                  className={`grid cursor-pointer grid-cols-[44px_0.7fr_1.1fr_0.9fr_1.5fr_0.9fr_0.7fr_0.7fr] items-center gap-2 px-5 py-3.5 transition-colors hover:bg-surface-sunken/60 ${
                     i !== entries.length - 1 ? "border-b border-line-soft" : ""
                   }`}
                 >
+                  <EntryThumbnail entry={e} />
                   <span className="flex items-center gap-1.5 text-[12px] text-ink-dim">
                     {e.kind === "document" ? (
                       <FileWarning size={13} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
@@ -287,6 +452,7 @@ export default function Blacklist() {
                     {e.kind === "document" ? "Document" : "Identity"}
                   </span>
                   <span className="font-mono text-[12.5px] font-medium text-ink">{matchLabel(e)}</span>
+                  <span className="text-[12px] text-ink-dim">{e.doc_type ? DOC_TYPE_LABEL[e.doc_type] ?? e.doc_type : "—"}</span>
                   <span className="truncate text-[12px] text-ink-dim" title={e.reason}>
                     {e.reason}
                     {e.source ? <span className="text-ink-faint"> · {e.source}</span> : null}
@@ -297,7 +463,10 @@ export default function Blacklist() {
                   </Badge>
                   {e.active ? (
                     <button
-                      onClick={() => deactivateEntry.mutate(e.id)}
+                      onClick={(evt) => {
+                        evt.stopPropagation();
+                        deactivateEntry.mutate(e.id);
+                      }}
                       disabled={deactivateEntry.isPending}
                       className="justify-self-end text-[11.5px] font-medium text-ink-faint hover:text-bad-ink disabled:opacity-50"
                     >
@@ -329,6 +498,15 @@ export default function Blacklist() {
             onCreate={(payload) => {
               createEntry.mutate(payload, { onSuccess: () => setShowAdd(false) });
             }}
+          />
+        )}
+        {selected && (
+          <EntryDetailModal
+            entry={selected}
+            addedByName={addedByName(selected.added_by)}
+            onClose={() => setSelected(null)}
+            isDeactivating={deactivateEntry.isPending}
+            onDeactivate={() => deactivateEntry.mutate(selected.id, { onSuccess: () => setSelected(null) })}
           />
         )}
       </AnimatePresence>
